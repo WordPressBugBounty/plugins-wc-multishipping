@@ -1,0 +1,307 @@
+{
+    "FR": {
+        "name": "Zone FR",
+        "countries": {
+            "FR": {
+                "mondial_relay_point_relais": true,
+                "mondial_relay_domicile_1_livreur": true,
+                "mondial_relay_domicile_2_livreurs": true,
+                "mondial_relay_domicile_inf_30": true,
+                "mondial_relay_colis_drive": true
+            }
+        }
+    },
+    "Z1": {
+        "name": "Zone Z1",
+        "countries": {
+            "BE": {
+                "mondial_relay_point_relais": true,
+                "mondial_relay_domicile_1_livreur": false,
+                "mondial_relay_domicile_2_livreurs": false,
+                "mondial_relay_domicile_inf_30": true,
+                "mondial_relay_colis_drive": true
+            },
+            "DE": {
+                "mondial_relay_point_relais": false,
+                "mondial_relay_domicile_1_livreur": false,
+                "mondial_relay_domicile_2_livreurs": false,
+                "mondial_relay_domicile_inf_30": true,
+                "mondial_relay_colis_drive": true
+            },
+            "LU": {
+                "mondial_relay_point_relais": true,
+                "mondial_relay_domicile_1_livreur": false,
+                "mondial_relay_domicile_2_livreurs": false,
+                "mondial_relay_domicile_inf_30": true,
+                "mondial_relay_colis_drive": true
+            },
+            "NL": {
+                "mondial_relay_point_relais": true,
+                "mondial_relay_domicile_1_livreur": false,
+                "mondial_relay_domicile_2_livreurs": false,
+                "mondial_relay_domicile_inf_30": true,
+                "mondial_relay_colis_drive": true
+            }
+        }
+    },
+    "Z2": {
+        "name": "Zone Z2",
+        "countries": {
+            "AT": {
+                "mondial_relay_domicile_1_livreur": false,
+                "mondial_relay_domicile_2_livreurs": false,
+                "mondial_relay_domicile_inf_30": true
+            },
+            "DK": {},
+            "ES": {
+                "mondial_relay_point_relais": true,
+                "mondial_relay_domicile_1_livreur": false,
+                "mondial_relay_domicile_2_livreurs": false,
+                "mondial_relay_domicile_inf_30": true,
+                "mondial_relay_colis_drive": true
+            },
+            "FI": {},
+            "GB": {},
+            "GR": {},
+            "IE": {},
+            "IT": {
+                "mondial_relay_domicile_1_livreur": false,
+                "mondial_relay_domicile_2_livreurs": false,
+                "mondial_relay_domicile_inf_30": true
+            },
+            "PT": {
+                "mondial_relay_point_relais": true,
+                "mondial_relay_domicile_1_livreur": false,
+                "mondial_relay_domicile_2_livreurs": false,
+                "mondial_relay_domicile_inf_30": true
+            },
+            "SE": {}
+        }
+    },
+    "Z3": {
+        "name": "Zone Z3",
+        "countries": {
+            "CY": {},
+            "BG": {},
+            "CZ": {},
+            "EE": {},
+            "HU": {},
+            "LT": {},
+            "LV": {},
+            "MT": {},
+            "PL": {},
+            "RO": {},
+            "SI": {},
+            "SK": {}
+        }
+    },
+    "Z4": {
+        "name": "Zone Z4",
+        "countries": {
+            "GS": {},
+            "AM": {},
+            "GE": {},
+            "AD": {},
+            "AL": {},
+            "BA": {},
+            "BY": {},
+            "CH": {},
+            "FO": {},
+            "GI": {},
+            "HR": {},
+            "IS": {},
+            "JE": {},
+            "LI": {},
+            "MD": {},
+            "ME": {},
+            "MK": {},
+            "NO": {},
+            "RS": {},
+            "RU": {},
+            "SM": {},
+            "TR": {},
+            "UA": {},
+            "VA": {}
+        }
+    },
+    "Z5": {
+        "name": "Zone Z5",
+        "countries": {
+            "AG": {},
+            "AI": {},
+            "AW": {},
+            "BB": {},
+            "BM": {},
+            "BS": {},
+            "BZ": {},
+            "CA": {},
+            "CR": {},
+            "DM": {},
+            "DO": {},
+            "GD": {},
+            "GT": {},
+            "HN": {},
+            "HT": {},
+            "JM": {},
+            "KN": {},
+            "KY": {},
+            "LC": {},
+            "MS": {},
+            "MX": {},
+            "NI": {},
+            "PA": {},
+            "PR": {},
+            "SV": {},
+            "TC": {},
+            "TT": {},
+            "US": {},
+            "VC": {},
+            "VG": {},
+            "VI": {},
+            "AR": {},
+            "BO": {},
+            "BR": {},
+            "CL": {},
+            "CO": {},
+            "EC": {},
+            "GY": {},
+            "PE": {},
+            "PY": {},
+            "SR": {},
+            "UY": {}
+        }
+    },
+    "Z6": {
+        "name": "Zone Z6",
+        "countries": {
+            "AO": {},
+            "BF": {},
+            "BI": {},
+            "BJ": {},
+            "BW": {},
+            "CD": {},
+            "CF": {},
+            "CG": {},
+            "CI": {},
+            "CM": {},
+            "CV": {},
+            "DJ": {},
+            "DZ": {},
+            "EG": {},
+            "ER": {},
+            "ET": {},
+            "GA": {},
+            "GH": {},
+            "GM": {},
+            "GN": {},
+            "GQ": {},
+            "GW": {},
+            "KE": {},
+            "LR": {},
+            "LS": {},
+            "LY": {},
+            "MA": {},
+            "MG": {},
+            "ML": {},
+            "MR": {},
+            "MU": {},
+            "MW": {},
+            "MZ": {},
+            "NA": {},
+            "NE": {},
+            "RW": {},
+            "SC": {},
+            "SL": {},
+            "SN": {},
+            "SZ": {},
+            "TD": {},
+            "TG": {},
+            "TN": {},
+            "TZ": {},
+            "UG": {},
+            "ZA": {},
+            "ZM": {},
+            "ZW": {},
+            "AE": {},
+            "AZ": {},
+            "BH": {},
+            "IL": {},
+            "JO": {},
+            "KW": {},
+            "LB": {},
+            "OM": {},
+            "PS": {},
+            "QA": {},
+            "SA": {}
+        }
+    },
+    "Z7": {
+        "name": "Zone Z7",
+        "countries": {
+            "AF": {},
+            "BD": {},
+            "BN": {},
+            "BT": {},
+            "CC": {},
+            "CN": {},
+            "CX": {},
+            "HK": {},
+            "ID": {},
+            "IN": {},
+            "JP": {},
+            "KG": {},
+            "KH": {},
+            "KR": {},
+            "KZ": {},
+            "LA": {},
+            "LK": {},
+            "MN": {},
+            "MO": {},
+            "MV": {},
+            "MY": {},
+            "PH": {},
+            "PK": {},
+            "SG": {},
+            "TH": {},
+            "TL": {},
+            "TW": {},
+            "UZ": {},
+            "VN": {},
+            "AS": {},
+            "AU": {},
+            "CK": {},
+            "FJ": {},
+            "FM": {},
+            "GU": {},
+            "KI": {},
+            "MH": {},
+            "NF": {},
+            "NR": {},
+            "NZ": {},
+            "PG": {},
+            "PW": {},
+            "SB": {},
+            "TO": {},
+            "TV": {},
+            "VU": {},
+            "WS": {}
+        }
+    },
+    "Z8": {
+        "name": "Zone Z8",
+        "countries": {
+            "RE": {},
+            "GP": {},
+            "MQ": {}
+        }
+    },
+    "Z9": {
+        "name": "Zone Z9",
+        "countries": {
+            "PM": {},
+            "NC": {},
+            "PF": {},
+            "GF": {}
+        }
+    }
+}
