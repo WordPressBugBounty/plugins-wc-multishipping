@@ -335,7 +335,7 @@ class chronopost_parcel extends abstract_parcel {
 
 
 		if ( ! class_exists( 'PDF_lib' ) )
-			include ( WMS_LIB . 'PDF_lib.class.php' );
+			include( WMS_LIB . 'PDF_lib.class.php' );
 
 		$tracking_number = '';
 		ob_start();
@@ -345,7 +345,9 @@ class chronopost_parcel extends abstract_parcel {
 		fclose( $label_content_file );
 
 		$file_to_download_name = get_temp_dir() . 'wms_chronopost.label_(' . $reservation_number . ').pdf';
-		$splitted_pdf_pages = @\PDF_lib::split_pdf( sys_get_temp_dir() . DS . $label_file_name, \PDF_lib::DESTINATION__STRING, $file_to_download_name );
+
+		$splitted_pdf_pages = @\PDF_lib::split_pdf( sys_get_temp_dir() . DS . $label_file_name, \PDF_lib::DESTINATION__STRING, $file_to_download_name, 2 );
+
 		if ( empty( $splitted_pdf_pages ) ) {
 			wms_enqueue_message( sprintf( 'Error while storing parcel labels for order %s => Can\'t split pages.', $order->get_id() ), 'error' );
 

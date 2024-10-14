@@ -64,38 +64,34 @@ class PDF_lib
     }
 
 
-    public static function split_pdf($file_name, $destination = null, $output_path = null)
-    {
+    public static function split_pdf( $file_name, $destination = null, $output_path = null, $nb_of_parcel = 1 ) {
+		$destination = $destination ?: self::DEFAULT_DESTINATION;
+		$output_path = $output_path ?: self::DEFAULT_MERGED_FILE_NAME;
 
-        if (empty($destination)) {
-            $destination = self::DEFAULT_DESTINATION;
-        }
+		$pdf = new wms_FPDI();
+		$pagecount = $pdf->setSourceFile( $file_name );
+		$pdf_pages = [];
 
-        if (empty($output_path)) {
-            $output_path = self::DEFAULT_MERGED_FILE_NAME;
-        }
-
-        $pdf = new wms_FPDI();
-        $pagecount = $pdf->setSourceFile($file_name); // How many pages?
-        $pdf_pages = [];
+		$split_size = ceil( $pagecount / max( 1, $nb_of_parcel ) );
 
 
-        for ($i = 1; $i <= $pagecount; $i++) {
-            $new_pdf = new wms_FPDI();
-            $new_pdf->AddPage();
-            $new_pdf->setSourceFile($file_name);
-            $new_pdf->useTemplate($new_pdf->importPage($i), null, null, 0, 0, true);
-            $new_pdf->endPage();
 
-            try {
-                $pdf_pages[] = $new_pdf->Output($output_path, $destination, true);
-            } catch (\Exception $e) {
-                echo 'Caught exception: ', $e->getMessage(), "\n";
-            }
-        }
+		for ( $i = 1; $i <= $pagecount; $i += $split_size ) {
+			$new_pdf = new wms_FPDI();
+			for ( $j = $i; $j < min( $i + $split_size, $pagecount + 1 ); $j++ ) {
+				$new_pdf->AddPage();
+				$new_pdf->setSourceFile( $file_name );
+				$new_pdf->useTemplate( $new_pdf->importPage( $j ), null, null, 0, 0, true );
+			}
+			try {
+				$pdf_pages[] = $new_pdf->Output( $output_path, $destination, true );
+			} catch (\Exception $e) {
+				echo 'Caught exception: ', $e->getMessage(), "\n";
+			}
+		}
 
-        return $pdf_pages;
-    }
+		return $pdf_pages;
+	}
 
     public static function gif_to_pdf($file_name, $destination = null, $output_path = null)
     {

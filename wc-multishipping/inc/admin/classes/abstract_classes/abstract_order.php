@@ -482,12 +482,19 @@ abstract class abstract_order {
 
 		if ( OrderUtil::custom_orders_table_usage_is_enabled() ) {
 			$this->where[] = "{$wpdb->prefix}wc_orders.date_created_gmt > '" . $fromDate . "'";
-			$this->where[] = "({$wpdb->prefix}wc_orders.status <> 'completed')";
 		} else {
 			$this->where[] = "{$wpdb->prefix}posts.post_date > '" . $fromDate . "'";
 			$this->where[] = "({$wpdb->prefix}postmeta.meta_value IS NULL OR {$wpdb->prefix}postmeta.meta_value = '0')";
-			$this->where[] = "({$wpdb->prefix}posts.post_status <> 'completed')";
 		}
+
+		$this->where[] = "({$wpdb->prefix}posts.post_status <> 'completed')";
+		$this->where[] = "({$wpdb->prefix}posts.post_status <> 'wc-cancelled')";
+		$this->where[] = "({$wpdb->prefix}posts.post_status <> 'wc-refunded')";
+		$this->where[] = "({$wpdb->prefix}posts.post_status <> 'wc-failed')";
+		$this->where[] = "({$wpdb->prefix}posts.post_status <> 'wc-checkout-draft')";
+		$this->where[] = "({$wpdb->prefix}posts.post_status <> 'wc-pending')";
+		$this->where[] = "({$wpdb->prefix}posts.post_status <> 'trash')";
+		$this->where[] = "({$wpdb->prefix}posts.post_status <> 'auto-draft')";
 
 		$matching_order_ids = $this->get_orders();
 		if ( empty( $matching_order_ids ) )
