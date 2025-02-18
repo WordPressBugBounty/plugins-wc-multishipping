@@ -27,6 +27,9 @@ class chronopost_settings extends abstract_settings {
 
 	public static function settings_tab() {
 		wp_enqueue_script( 'wms_chronopost_settings', WMS_ADMIN_JS_URL . 'chronopost/chronopost_woocommerce_settings.min.js?t=' . time(), [ 'jquery' ] );
+		wp_localize_script('wms_chronopost_settings', 'wmsSettings', [
+			'ajaxurl' => admin_url('admin-ajax.php')
+		]);
 		wp_enqueue_style( 'wms_chronopost_settings', WMS_ADMIN_CSS_URL . 'chronopost/chronopost_woocommerce_settings.min.css?t=' . time() );
 		woocommerce_admin_fields( self::get_settings() );
 	}

@@ -4,7 +4,7 @@ Donate link:
 Tags: WooCommerce, Mondial Relay, Chronopost
 Requires at least: 4.7
 Tested up to: 6.6
-Stable tag: 2.5.3
+Stable tag: 2.5.5
 Requires PHP: 5.7
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -85,6 +85,14 @@ We provide a detailed setup guide on our website. You can follow the steps here:
 3. Chronopost shipping methods configuration
 
 == Changelog ==
+
+= 2.5.5 - February 2025 =
+Chronopost Shipping Methods Per Country update
+Fix w/ assigning order to Chronopost / MR from admin page
+Compatibilty with new WordPress Select For Country in checkout
+Order status tracking fix + Chronopost link to doc 
+
+
 
 = 2.5.1 - September 2024 =
 Front-end issue fixed

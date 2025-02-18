@@ -2,7 +2,7 @@
 /*
 Plugin Name:Chronopost & Mondial relay pour WooCommerce - WCMultiShipping
 Description: Create Chronopost & Mondial relay shipping labels and send them easily.
-Version: 2.5.2
+Version: 2.5.5
 Author: Mondial Relay WooCommerce - WCMultiShipping
 Author URI: https://www.wcmultishipping.com/fr/mondial-relay-woocommerce/
 License: GPLv2
@@ -77,11 +77,40 @@ add_action( 'enqueue_block_assets', function () {
 	$countries_obj = new \WC_Countries();
 	$countries = $countries_obj->__get( 'countries' );
 
+	global $post;
+
+	if ( ! has_block( "woocommerce/checkout", $post->post_content ) && ! is_checkout() )
+		return;
+
+	// Initialize WMS global object with shared variables
+	$wms_shared_data = array(
+		'ajaxurl' => admin_url( 'admin-ajax.php' ),
+		'maps' => array(
+			'markers' => array(),
+			'instance' => null,
+			'google' => null
+		),
+		'ui' => array(
+			'modal' => null,
+			'loader' => null,
+			'listingContainer' => null
+		)
+	);
+
+	// Enqueue wp-i18n script
+	wp_enqueue_script( 'wp-i18n' );
+
+	// Enqueue the global configuration script
+	wp_enqueue_script( 'wms_globals', WMS_FRONT_JS_URL . 'wms-globals.js', [ 'wp-i18n', 'jquery' ], '1.0', true );
+
+	// Localize the script with our data
+	wp_localize_script( 'wms_globals', 'WMS', $wms_shared_data );
+
 	//Includes the modals
 
 	if ( $google_maps_is_used ) {
 		include WMS_FRONT_PARTIALS . 'pickups' . DS . 'google_maps' . DS . 'modal.php';
-		wp_enqueue_script( 'wms_pickup_modal_google_maps', WMS_FRONT_JS_URL . 'pickups/google_maps/google_maps_pickup_widget.js?time=' . time(), [ 'wp-i18n', 'wms_pickup_modal_woocommerce_block' ], '', true );
+		wp_enqueue_script( 'wms_pickup_modal_google_maps', WMS_FRONT_JS_URL . 'pickups/google_maps/google_maps_pickup_widget.js?time=' . time(), [ 'jquery', 'wms_globals' ], '', true );
 		wp_set_script_translations( 'wms_pickup_modal_google_maps', 'wc-multishipping' );
 		wp_enqueue_script( 'google', 'https://maps.googleapis.com/maps/api/js?key=' . $google_maps_api_key . '&v=quarterly', [], '', true );
 	}
@@ -90,46 +119,25 @@ add_action( 'enqueue_block_assets', function () {
 		include WMS_FRONT_PARTIALS . 'pickups' . DS . 'mondial_relay' . DS . 'modal.php';
 		wp_enqueue_script( 'mondialrelay-leaflet-maps', '//unpkg.com/leaflet/dist/leaflet.js', [], '', true );
 		wp_enqueue_script( 'mondialrelay-parcelshoppicker', 'https://widget.mondialrelay.com/parcelshop-picker/jquery.plugin.mondialrelay.parcelshoppicker.js', [], '', true );
-		wp_enqueue_script( 'wms_pickup_modal_mondial_relay', WMS_FRONT_JS_URL . 'pickups/mondial_relay/mondial_relay_pickup_widget.js?time=' . time(), [ 'wp-i18n', 'wms_pickup_modal_woocommerce_block' ], '', true );
+		wp_enqueue_script( 'wms_pickup_modal_mondial_relay', WMS_FRONT_JS_URL . 'pickups/mondial_relay/mondial_relay_pickup_widget.js?time=' . time(), [ 'jquery', 'wms_globals' ], '', true );
 	}
 
 	if ( $open_street_maps_is_used ) {
 		include WMS_FRONT_PARTIALS . 'pickups' . DS . 'openstreetmap' . DS . 'modal.php';
 		wp_enqueue_script( 'openstreetmap-leaflet-maps', '//unpkg.com/leaflet/dist/leaflet.js', [], '', true );
-		wp_enqueue_script( 'wms_pickup_modal_openstreetmap', WMS_FRONT_JS_URL . 'pickups/openstreetmap/openstreetmap_pickup_widget.js?time=' . time(), [ 'wp-i18n', 'wms_pickup_modal_woocommerce_block' ], '1.0', true );
+		wp_enqueue_script( 'wms_pickup_modal_openstreetmap', WMS_FRONT_JS_URL . 'pickups/openstreetmap/openstreetmap_pickup_widget.js?time=' . time(), [ 'jquery', 'wms_globals' ], '1.0', true );
 		wp_set_script_translations( 'wms_pickup_modal_openstreetmap', 'wc-multishipping' );
 	}
 
 	//Adding the modal scripts
 	wp_enqueue_style( 'wms_pickup_CSS', WMS_FRONT_CSS_URL . 'pickups/wooshippping_pickup_widget.min.css?time=' . time() );
-	wp_enqueue_script( 'wms_pickup_modal_woocommerce_block', WMS_FRONT_JS_URL . 'pickups/woocommerce_blocks/wms_pickup_selection_button.js?time=' . time(), [ 'wp-i18n', 'jquery' ], '1.0' );
 
+	wp_enqueue_script( 'wms_pickup_modal_woocommerce_block', WMS_FRONT_JS_URL . 'pickups/woocommerce_blocks/wms_pickup_selection_button.js?time=' . time(), [ 'jquery', 'wms_globals' ], '1.0' );
 
 	wp_enqueue_script( 'backbone-modal', WMS_PLUGINS_URL . '/woocommerce/assets/js/admin/backbone-modal.js', [ 'jquery', 'wp-util', 'backbone' ] );
 } );
 
-add_action( 'wp_footer', function () {
 
-	global $post;
-
-	if ( ! has_block( "woocommerce/checkout", $post->post_content ) && ! is_checkout() )
-		return;
-
-
-	echo '<script>var wmsajaxurl = "' . admin_url( 'admin-ajax.php' ) . '";
-               var {
-                    __,
-                    _x,
-                    _n,
-                    _nx
-                } = wp.i18n;
-                var markers = [];
-                var modal ;
-                var loader;
-                var my_map = null;
-                var wms_map_google;
-                var listing_container;</script>';
-} );
 
 add_action( 'woocommerce_blocks_loaded', function () {
 	require_once __DIR__ . '/wcmultishipping-blocks-integration.php';

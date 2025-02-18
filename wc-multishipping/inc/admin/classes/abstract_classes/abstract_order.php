@@ -68,7 +68,7 @@ abstract class abstract_order {
 		if ( ! empty( $additional_where_conditions ) )
 			$this->where = array_merge( $additional_where_conditions, $this->where );
 
-		$query = "SELECT DISTINCT {$wpdb->prefix}woocommerce_order_items.order_id";
+		$query = "SELECT DISTINCT {$wpdb->prefix}woocommerce_order_items.order_id, " . $this->from . ".*";
 		$query .= " FROM $this->from ";
 		$query .= implode( ' ', $this->join );
 		$query .= ' WHERE ' . implode( ' AND ', $this->where );
@@ -101,10 +101,10 @@ abstract class abstract_order {
                     FROM {$wpdb->prefix}wc_orders
                     
                     JOIN {$wpdb->prefix}woocommerce_order_items
-                    ON {$wpdb->prefix}wc_orders.id ={$wpdb->prefix}woocommerce_order_items.order_id
+                    ON {$wpdb->prefix}wc_orders.id = {$wpdb->prefix}woocommerce_order_items.order_id
                     
                     JOIN {$wpdb->prefix}woocommerce_order_itemmeta
-                    ON {$wpdb->prefix}woocommerce_order_itemmeta.order_item_id ={$wpdb->prefix}woocommerce_order_items.order_item_id
+                    ON {$wpdb->prefix}woocommerce_order_itemmeta.order_item_id = {$wpdb->prefix}woocommerce_order_items.order_item_id
                     
                     WHERE ({$wpdb->prefix}woocommerce_order_itemmeta.meta_key = 'method_id'
                     AND {$wpdb->prefix}woocommerce_order_itemmeta.meta_value IN " . self::get_shipping_method_sql_condition() . ")
@@ -116,21 +116,22 @@ abstract class abstract_order {
                     FROM {$wpdb->prefix}posts
                     
                     JOIN {$wpdb->prefix}woocommerce_order_items
-                    ON {$wpdb->prefix}posts.ID ={$wpdb->prefix}woocommerce_order_items.order_id
+                    ON {$wpdb->prefix}posts.ID = {$wpdb->prefix}woocommerce_order_items.order_id
                     
                     JOIN {$wpdb->prefix}woocommerce_order_itemmeta
-                    ON {$wpdb->prefix}woocommerce_order_itemmeta.order_item_id ={$wpdb->prefix}woocommerce_order_items.order_item_id
+                    ON {$wpdb->prefix}woocommerce_order_itemmeta.order_item_id = {$wpdb->prefix}woocommerce_order_items.order_item_id
                     
-                    WHERE ({$wpdb->prefix}posts.post_type = 'shop_order' OR wp_posts.post_type = 'shop_order_placehold') 
+                    WHERE ({$wpdb->prefix}posts.post_type = 'shop_order' OR {$wpdb->prefix}posts.post_type = 'shop_order_placehold') 
                     AND ({$wpdb->prefix}woocommerce_order_itemmeta.meta_key = 'method_id'
                     AND {$wpdb->prefix}woocommerce_order_itemmeta.meta_value IN " . self::get_shipping_method_sql_condition() . ")
                     AND ({$wpdb->prefix}posts.post_status <> 'trash'
                     AND {$wpdb->prefix}posts.post_status <> 'auto-draft')";
 		}
-		$result = $wpdb->get_results( $query );
 
-		if ( null !== $result ) {
-			return $result[0]->nb;
+		$result = $wpdb->get_row( $query );
+
+		if ( ! empty( $result ) && property_exists( $result, 'nb' ) ) {
+			return (int) $result->nb;
 		}
 
 		return 0;
@@ -482,19 +483,26 @@ abstract class abstract_order {
 
 		if ( OrderUtil::custom_orders_table_usage_is_enabled() ) {
 			$this->where[] = "{$wpdb->prefix}wc_orders.date_created_gmt > '" . $fromDate . "'";
+			$this->where[] = "({$wpdb->prefix}wc_orders.status <> 'wc-completed')";
+			$this->where[] = "({$wpdb->prefix}wc_orders.status <> 'wc-cancelled')";
+			$this->where[] = "({$wpdb->prefix}wc_orders.status <> 'wc-refunded')";
+			$this->where[] = "({$wpdb->prefix}wc_orders.status <> 'wc-failed')";
+			$this->where[] = "({$wpdb->prefix}wc_orders.status <> 'wc-checkout-draft')";
+			$this->where[] = "({$wpdb->prefix}wc_orders.status <> 'wc-pending')";
+			$this->where[] = "({$wpdb->prefix}wc_orders.status <> 'trash')";
+			$this->where[] = "({$wpdb->prefix}wc_orders.status <> 'auto-draft')";
 		} else {
 			$this->where[] = "{$wpdb->prefix}posts.post_date > '" . $fromDate . "'";
 			$this->where[] = "({$wpdb->prefix}postmeta.meta_value IS NULL OR {$wpdb->prefix}postmeta.meta_value = '0')";
+			$this->where[] = "({$wpdb->prefix}posts.post_status <> 'wc-completed')";
+			$this->where[] = "({$wpdb->prefix}posts.post_status <> 'wc-cancelled')";
+			$this->where[] = "({$wpdb->prefix}posts.post_status <> 'wc-refunded')";
+			$this->where[] = "({$wpdb->prefix}posts.post_status <> 'wc-failed')";
+			$this->where[] = "({$wpdb->prefix}posts.post_status <> 'wc-checkout-draft')";
+			$this->where[] = "({$wpdb->prefix}posts.post_status <> 'wc-pending')";
+			$this->where[] = "({$wpdb->prefix}posts.post_status <> 'trash')";
+			$this->where[] = "({$wpdb->prefix}posts.post_status <> 'auto-draft')";
 		}
-
-		$this->where[] = "({$wpdb->prefix}posts.post_status <> 'completed')";
-		$this->where[] = "({$wpdb->prefix}posts.post_status <> 'wc-cancelled')";
-		$this->where[] = "({$wpdb->prefix}posts.post_status <> 'wc-refunded')";
-		$this->where[] = "({$wpdb->prefix}posts.post_status <> 'wc-failed')";
-		$this->where[] = "({$wpdb->prefix}posts.post_status <> 'wc-checkout-draft')";
-		$this->where[] = "({$wpdb->prefix}posts.post_status <> 'wc-pending')";
-		$this->where[] = "({$wpdb->prefix}posts.post_status <> 'trash')";
-		$this->where[] = "({$wpdb->prefix}posts.post_status <> 'auto-draft')";
 
 		$matching_order_ids = $this->get_orders();
 		if ( empty( $matching_order_ids ) )

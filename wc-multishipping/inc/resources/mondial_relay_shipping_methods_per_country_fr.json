@@ -22,7 +22,7 @@
                 "mondial_relay_colis_drive": true
             },
             "DE": {
-                "mondial_relay_point_relais": false,
+                "mondial_relay_point_relais": true,
                 "mondial_relay_domicile_1_livreur": false,
                 "mondial_relay_domicile_2_livreurs": false,
                 "mondial_relay_domicile_inf_30": true,
@@ -65,6 +65,7 @@
             "GR": {},
             "IE": {},
             "IT": {
+                "mondial_relay_point_relais": true,
                 "mondial_relay_domicile_1_livreur": false,
                 "mondial_relay_domicile_2_livreurs": false,
                 "mondial_relay_domicile_inf_30": true

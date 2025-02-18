@@ -232,9 +232,7 @@ class chronopost_abstract_shipping extends abstract_shipping {
 
 			$quickcost = $this->get_option( 'quickcost', 'no' ) == 'yes';
 
-			if ( $this->get_option( 'free_shipping', 'no' ) == 'yes' || ( $free_shipping_amount > 0 && $total_price >= $free_shipping_amount ) ) {
-				$cost = 0;
-			} elseif ( $quickcost ) {
+			if ( $quickcost ) {
 				$cost = $this->get_quickcost( $package, $total_weight );
 				if ( $cost === false )
 					return;
@@ -255,34 +253,35 @@ class chronopost_abstract_shipping extends abstract_shipping {
 					}
 				}
 
-				if ( empty( $matching_rates ) && $debug_mode ) {
-					add_action( 'woocommerce_before_checkout_form', function () {
+				if ( empty( $matching_rates ) ) {
+					if ( $debug_mode ) {
+						add_action( 'woocommerce_before_checkout_form', function () {
 
-						$total_weight = floatval( $this->get_option( 'packaging_weight', 0 ) );
-						$woocommerce_weight_unit = get_option( 'woocommerce_weight_unit' );
-						if ( $woocommerce_weight_unit == 'g' && $total_weight > 0 )
-							$total_weight = $total_weight * 1000;
+							$total_weight = floatval( $this->get_option( 'packaging_weight', 0 ) );
+							$woocommerce_weight_unit = get_option( 'woocommerce_weight_unit' );
+							if ( $woocommerce_weight_unit == 'g' && $total_weight > 0 )
+								$total_weight = $total_weight * 1000;
 
-						wc_print_notice(
-							sprintf(
-								__( 'No %s shipping method displayed: The current cart doesn\'t match any rates you\'ve set in the shipping method pricing configuration.', 'wc-multishipping' ),
-								'Chronopost'
+							wc_print_notice(
+								sprintf(
+									__( 'No %s shipping method displayed: The current cart doesn\'t match any rates you\'ve set in the shipping method pricing configuration.', 'wc-multishipping' ),
+									'Chronopost'
 
-							),
-							'notice'
-						);
-						wc_print_notice(
-							sprintf(
-								__( 'Cart total amount: %1$s%2$s / Cart total weight: %3$s%4$s', 'wc-multishipping' ),
-								$total_weight + WC()->cart->cart_contents_total,
-								get_woocommerce_currency_symbol(),
-								WC()->cart->cart_contents_weight,
-								get_option( 'woocommerce_weight_unit' )
-							),
-							'notice'
-						);
-					}, 10 );
-
+								),
+								'notice'
+							);
+							wc_print_notice(
+								sprintf(
+									__( 'Cart total amount: %1$s%2$s / Cart total weight: %3$s%4$s', 'wc-multishipping' ),
+									$total_weight + WC()->cart->cart_contents_total,
+									get_woocommerce_currency_symbol(),
+									WC()->cart->cart_contents_weight,
+									get_option( 'woocommerce_weight_unit' )
+								),
+								'notice'
+							);
+						}, 10 );
+					}
 					return;
 				}
 
@@ -308,18 +307,19 @@ class chronopost_abstract_shipping extends abstract_shipping {
 					}
 				}
 
-				if ( empty( $matching_rates_shipping_classes ) && $debug_mode ) {
-					add_action( 'woocommerce_before_checkout_form', function () {
-						wc_print_notice(
-							sprintf(
-								__( 'No %s shipping method displayed: The products in the cart does not belong to the shippings classes set in the shipping method pricing configuration.', 'wc-multishipping' ),
-								'Chronopost'
+				if ( empty( $matching_rates_shipping_classes ) ) {
+					if ( $debug_mode ) {
+						add_action( 'woocommerce_before_checkout_form', function () {
+							wc_print_notice(
+								sprintf(
+									__( 'No %s shipping method displayed: The products in the cart does not belong to the shippings classes set in the shipping method pricing configuration.', 'wc-multishipping' ),
+									'Chronopost'
 
-							),
-							'notice'
-						);
-					}, 10 );
-
+								),
+								'notice'
+							);
+						}, 10 );
+					}
 					return;
 				}
 
@@ -337,6 +337,11 @@ class chronopost_abstract_shipping extends abstract_shipping {
 						$cost = $onePrice;
 					}
 				}
+			}
+
+			$free_shipping_amount = $this->get_option( 'free_shipping_condition', -1 );
+			if ( $this->get_option( 'free_shipping', 'no' ) == 'yes' || ( $free_shipping_amount > 0 && $total_price >= $free_shipping_amount ) ) {
+				$cost = 0;
 			}
 
 			$management_fees = $this->get_option( 'management_fees', 0 );

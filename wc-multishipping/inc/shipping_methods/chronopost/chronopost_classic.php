@@ -12,7 +12,7 @@ class chronopost_classic extends chronopost_abstract_shipping {
 	public function __construct( $instance_id = 0 ) {
 		$this->id = self::ID;
 
-		$this->method_title = __( 'Chronopost - Livraison à domicile', 'wc-multishipping' );
+		$this->method_title = __( 'Chronopost - Livraison à domicile en Europe', 'wc-multishipping' );
 
 		$this->method_description = 'Colis livrés en Europe en 1 à 3 jours';
 

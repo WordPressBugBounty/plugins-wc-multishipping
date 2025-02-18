@@ -40,9 +40,9 @@ abstract class abstract_helper {
 		add_action( 'woocommerce_order_status_changed', [ $page, 'do_order_status_changed_actions' ], 10, 4 );
 
 		if ( ! OrderUtil::custom_orders_table_usage_is_enabled() ) {
-			add_action( 'save_post', [ $page, 'save_admin_shipping_method_selection' ], 10, 3 );
+			add_action( 'save_post', [ $page, 'save_admin_shipping_method_selection' ], 100, 3 );
 		} else {
-			add_action( 'woocommerce_process_shop_order_meta', [ $page, 'save_admin_shipping_method_selection' ], 10, 3 );
+			add_action( 'woocommerce_process_shop_order_meta', [ $page, 'save_admin_shipping_method_selection' ], 100, 3 );
 		}
 
 		add_action( 'wp_ajax_wms_generate_label', [ $page, 'ajax_request_generate_label' ], 10, 3 );
@@ -159,21 +159,17 @@ abstract class abstract_helper {
 		if ( ! array_key_exists( $new_method, $order_class::AVAILABLE_SHIPPING_METHODS ) )
 			return;
 
-
 		if ( ! is_admin() || empty( $new_method ) ) {
 			return;
 		}
 
 		if ( in_array( $new_method, $order_class::ID_SHIPPING_METHODS_RELAY ) ) {
-
 			$relay_info = json_decode( stripslashes( $wms_pickup_info ) );
 			if ( empty( $relay_info ) || ! is_object( $relay_info ) )
 				return;
 
 			$relay_info->pickup_id = $wms_pickup_point;
 
-
-			$order = wc_get_order( $post_id );
 			$order->update_meta_data(
 				'_wms_' . static::SHIPPING_PROVIDER_ID . '_pickup_info',
 				array_map( 'sanitize_text_field', (array) $relay_info )
@@ -189,12 +185,20 @@ abstract class abstract_helper {
 		}
 
 		$shipping_item = $order->get_item( $wms_order_item_id );
+
+		if ( ! $shipping_item || ! is_a( $shipping_item, 'WC_Order_Item_Shipping' ) ) {
+			error_log( 'Erreur : Élément de livraison introuvable ou invalide.' );
+			return;
+		}
+
 		$shipping_item->set_props( [ 
 			'method_id' => $new_method,
 			'method_title' => $order_class::AVAILABLE_SHIPPING_METHODS[ $new_method ],
 		] );
 
 		$shipping_item->save();
+		$order->save();
+
 	}
 
 	public function clean_labels( $id ) {

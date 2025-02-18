@@ -1,0 +1,1 @@
+"use strict";var WMS={ajaxurl:WMS.ajaxurl,i18n:{__:wp.i18n.__,_x:wp.i18n._x,_n:wp.i18n._n,_nx:wp.i18n._nx},maps:{markers:[],instance:null,google:null},ui:{modal:null,loader:null,listingContainer:null}};
