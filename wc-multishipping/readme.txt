@@ -4,7 +4,7 @@ Donate link:
 Tags: WooCommerce, Mondial Relay, Chronopost
 Requires at least: 4.7
 Tested up to: 6.6
-Stable tag: 2.5.6
+Stable tag: 2.5.7
 Requires PHP: 5.7
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html

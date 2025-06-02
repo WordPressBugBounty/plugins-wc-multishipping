@@ -184,7 +184,7 @@ class chronopost_label extends abstract_label {
 		$shipping_method = reset( $order_shipping_method );
 		$is_relay_shipping_method = in_array( $shipping_method->get_method_id(), chronopost_order::ID_SHIPPING_METHODS_RELAY );
 
-		$custom_phone = apply_filters( 'chronopost_get_custom_phone', $order );
+		$custom_phone = apply_filters( 'chronopost_get_custom_phone', '' );
 
 
 		if ( ! $is_return_order ) {
