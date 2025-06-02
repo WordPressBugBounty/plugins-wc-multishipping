@@ -16,7 +16,7 @@ class chronopost_label extends abstract_label {
 	public function build_outcome_payload( $order ) {
 		if ( empty( $this->with_account( $order ) ) )
 			return false;
-		if ( empty( $this->with_customer() ) )
+		if ( empty( $this->with_customer( $order ) ) )
 			return false;
 		if ( empty( $this->with_shipper( $order, false ) ) )
 			return false;
@@ -37,7 +37,7 @@ class chronopost_label extends abstract_label {
 	public function build_income_payload( $order ) {
 		if ( empty( $this->with_account( $order ) ) )
 			return false;
-		if ( empty( $this->with_customer() ) )
+		if ( empty( $this->with_customer( $order ) ) )
 			return false;
 		if ( empty( $this->with_shipper( $order, true ) ) )
 			return false;
@@ -184,6 +184,9 @@ class chronopost_label extends abstract_label {
 		$shipping_method = reset( $order_shipping_method );
 		$is_relay_shipping_method = in_array( $shipping_method->get_method_id(), chronopost_order::ID_SHIPPING_METHODS_RELAY );
 
+		$custom_phone = apply_filters( 'chronopost_get_custom_phone', $order );
+
+
 		if ( ! $is_return_order ) {
 			$customer_obj = new \WC_Customer( $order->get_customer_id() );
 
@@ -201,8 +204,8 @@ class chronopost_label extends abstract_label {
 				'recipientCountry' => substr( remove_accents( $order->get_shipping_country() ), 0, 2 ),
 				'recipientContactName' => substr( remove_accents( $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name() ), 0, 100 ),
 				'recipientEmail' => substr( $order->get_billing_email() ? $order->get_billing_email() : $customer_obj->get_email(), 0, 80 ),
-				'recipientPhone' => preg_replace( '/\s|(\+33|0033)(\d)/', '0$2', preg_replace( '/[^0-9\+\-]/', '', $order->get_billing_phone() ) ),
-				'recipientMobilePhone' => preg_replace( '/\s|(\+33|0033)(\d)/', '0$2', preg_replace( '/[^0-9\+\-]/', '', $order->get_billing_phone() ) ),
+				'recipientPhone' => preg_replace( '/\s|(\+33|0033)(\d)/', '0$2', preg_replace( '/[^0-9\+\-]/', '', $custom_phone ?? $order->get_billing_phone() ) ),
+				'recipientMobilePhone' => preg_replace( '/\s|(\+33|0033)(\d)/', '0$2', preg_replace( '/[^0-9\+\-]/', '', $custom_phone ?? $order->get_billing_phone() ) ),
 				'recipientPreAlert' => '',
 			];
 		} else {

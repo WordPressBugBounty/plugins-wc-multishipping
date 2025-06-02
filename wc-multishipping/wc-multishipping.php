@@ -2,7 +2,7 @@
 /*
 Plugin Name:Chronopost & Mondial relay pour WooCommerce - WCMultiShipping
 Description: Create Chronopost & Mondial relay shipping labels and send them easily.
-Version: 2.5.5
+Version: 2.5.6
 Author: Mondial Relay WooCommerce - WCMultiShipping
 Author URI: https://www.wcmultishipping.com/fr/mondial-relay-woocommerce/
 License: GPLv2
@@ -47,6 +47,23 @@ function wms_init( $hook ) {
 
 
 add_action( 'plugins_loaded', __NAMESPACE__ . '\\wms_init', 999 );
+
+add_action( 'init', function () {
+
+	//Used to submit translations to WP
+	$translations = [ 
+		__( 'Generate outward labels', 'wc-multishipping' ),
+		__( 'Download labels', 'wc-multishipping' ),
+		__( 'Print labels', 'wc-multishipping' ),
+		__( 'Delete labels', 'wc-multishipping' ),
+		__( "Display pickup points map via", "wc-multishipping" ),
+		__( "Automatically generate label on these order status", "wc-multishipping" ),
+		__( "Status to set after label generation", "wc-multishipping" ),
+		__( "Send tracking link via email once the label is generated?", "wc-multishipping" ),
+		__( 'Click here to ship this order with %s', 'wc-multishipping' )
+	];
+
+} );
 
 
 // Hook: Frontend assets.
@@ -101,7 +118,7 @@ add_action( 'enqueue_block_assets', function () {
 	wp_enqueue_script( 'wp-i18n' );
 
 	// Enqueue the global configuration script
-	wp_enqueue_script( 'wms_globals', WMS_FRONT_JS_URL . 'wms-globals.js', [ 'wp-i18n', 'jquery' ], '1.0', true );
+	wp_enqueue_script( 'wms_globals', WMS_FRONT_JS_URL . 'pickups' . DS . 'wms-globals.js', [ 'wp-i18n', 'jquery' ], '1.0', true );
 
 	// Localize the script with our data
 	wp_localize_script( 'wms_globals', 'WMS', $wms_shared_data );

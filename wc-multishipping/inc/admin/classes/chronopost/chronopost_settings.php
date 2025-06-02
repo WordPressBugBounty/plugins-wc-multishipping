@@ -26,10 +26,10 @@ class chronopost_settings extends abstract_settings {
 	}
 
 	public static function settings_tab() {
-		wp_enqueue_script( 'wms_chronopost_settings', WMS_ADMIN_JS_URL . 'chronopost/chronopost_woocommerce_settings.min.js?t=' . time(), [ 'jquery' ] );
-		wp_localize_script('wms_chronopost_settings', 'wmsSettings', [
-			'ajaxurl' => admin_url('admin-ajax.php')
-		]);
+		wp_enqueue_script( 'wms_chronopost_settings', WMS_ADMIN_JS_URL . 'chronopost/chronopost_woocommerce_settings.js?t=' . time(), [ 'jquery' ] );
+		wp_localize_script( 'wms_chronopost_settings', 'wmsSettings', [ 
+			'ajaxurl' => admin_url( 'admin-ajax.php' )
+		] );
 		wp_enqueue_style( 'wms_chronopost_settings', WMS_ADMIN_CSS_URL . 'chronopost/chronopost_woocommerce_settings.min.css?t=' . time() );
 		woocommerce_admin_fields( self::get_settings() );
 	}
@@ -111,9 +111,9 @@ class chronopost_settings extends abstract_settings {
 				"class" => "",
 				"default" => "openstreetmap",
 				"options" => [ 
-						"openstreetmap" => "OpenStreetMap",
-						"google_maps" => "Google Maps",
-					],
+					"openstreetmap" => "OpenStreetMap",
+					"google_maps" => "Google Maps",
+				],
 				"custom_attributes" => [ 
 					"disabled" => "disabled",
 				],
@@ -153,8 +153,8 @@ class chronopost_settings extends abstract_settings {
 				"default" => "",
 				"options" => $wc_status,
 				"custom_attributes" => [ 
-						"disabled" => "disabled",
-					],
+					"disabled" => "disabled",
+				],
 			],
 			[ 
 				"id" => "wms_chronopost_section_label_status_post_generation",
@@ -164,8 +164,8 @@ class chronopost_settings extends abstract_settings {
 				"default" => "",
 				"options" => $wc_status,
 				"custom_attributes" => [ 
-						"disabled" => "disabled",
-					],
+					"disabled" => "disabled",
+				],
 			],
 			[ 
 				"id" => "wms_chronopost_section_label_send_email",
@@ -173,8 +173,8 @@ class chronopost_settings extends abstract_settings {
 				"title" => __( "Send tracking link via email once the label is generated? (Pro version only)", "wc-multishipping" ),
 				"class" => "",
 				"custom_attributes" => [ 
-						"disabled" => "disabled",
-					],
+					"disabled" => "disabled",
+				],
 			],
 			[ 
 				"id" => "wms_chronopost_section_label",

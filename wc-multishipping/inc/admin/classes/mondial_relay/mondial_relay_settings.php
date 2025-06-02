@@ -23,7 +23,7 @@ class mondial_relay_settings extends abstract_settings {
 	}
 
 	public static function settings_tab() {
-		wp_enqueue_script( 'wms_mondial_relay_settings', WMS_ADMIN_JS_URL . 'mondial_relay/mondial_relay_woocommerce_settings.min.js?t=' . time(), [ 'jquery' ] );
+		wp_enqueue_script( 'wms_mondial_relay_settings', WMS_ADMIN_JS_URL . 'mondial_relay/mondial_relay_woocommerce_settings.js?t=' . time(), [ 'jquery' ] );
 		wp_localize_script( 'wms_mondial_relay_settings', 'wmsSettings', [ 
 			'ajaxurl' => admin_url( 'admin-ajax.php' )
 		] );
@@ -118,10 +118,10 @@ class mondial_relay_settings extends abstract_settings {
 				"class" => "",
 				"default" => "openstreetmap",
 				"options" => [ 
-						"openstreetmap" => "OpenStreetMap",
-						"google_maps" => "Google Maps",
-						"mondial_relay_map" => "Mondial Relay Widget",
-					],
+					"openstreetmap" => "OpenStreetMap",
+					"google_maps" => "Google Maps",
+					"mondial_relay_map" => "Mondial Relay Widget",
+				],
 				"custom_attributes" => [ 
 					"disabled" => "disabled",
 				],
@@ -150,8 +150,8 @@ class mondial_relay_settings extends abstract_settings {
 				"default" => "",
 				"options" => $wc_status,
 				"custom_attributes" => [ 
-						"disabled" => "disabled",
-					],
+					"disabled" => "disabled",
+				],
 			],
 			[ 
 				"id" => "wms_mondial_relay_section_label_status_post_generation",
@@ -161,8 +161,8 @@ class mondial_relay_settings extends abstract_settings {
 				"default" => "",
 				"options" => $wc_status,
 				"custom_attributes" => [ 
-						"disabled" => "disabled",
-					],
+					"disabled" => "disabled",
+				],
 			],
 			[ 
 				"id" => "wms_mondial_relay_section_label_send_email",
@@ -170,8 +170,8 @@ class mondial_relay_settings extends abstract_settings {
 				"title" => __( "Send tracking link via email once the label is generated? (Pro version only)", "wc-multishipping" ),
 				"class" => "",
 				"custom_attributes" => [ 
-						"disabled" => "disabled",
-					],
+					"disabled" => "disabled",
+				],
 			],
 			[ 
 				"id" => "wms_mondial_relay_section_label",
@@ -205,11 +205,11 @@ class mondial_relay_settings extends abstract_settings {
 				"class" => "",
 				"default" => "MLLE",
 				"options" => [ 
-						"" => "",
-						"MLLE" => "MLLE",
-						"MR" => "MR",
-						"MME" => "MME",
-					],
+					"" => "",
+					"MLLE" => "MLLE",
+					"MR" => "MR",
+					"MME" => "MME",
+				],
 			],
 			[ 
 				"id" => "wms_mondial_relay_shipper_name",
@@ -297,13 +297,13 @@ class mondial_relay_settings extends abstract_settings {
 				"class" => "",
 				"default" => "0",
 				"options" => [ 
-						"Sans assurance",
-						"Assurance complémentaire N1",
-						"Assurance complémentaire N2",
-						"Assurance complémentaire N3",
-						"Assurance complémentaire N4",
-						"Assurance complémentaire N5",
-					],
+					"Sans assurance",
+					"Assurance complémentaire N1",
+					"Assurance complémentaire N2",
+					"Assurance complémentaire N3",
+					"Assurance complémentaire N4",
+					"Assurance complémentaire N5",
+				],
 			],
 			[ 
 				"id" => "wms_mondial_relay_section_parcel_installation_duration",
@@ -312,9 +312,9 @@ class mondial_relay_settings extends abstract_settings {
 				"class" => "",
 				"default" => "",
 				"custom_attributes" => [ 
-						"min" => "0",
-						"max" => "180",
-					],
+					"min" => "0",
+					"max" => "180",
+				],
 			],
 			[ 
 				"id" => "wms_mondial_relay_section_parcel_shipping_value",
@@ -323,9 +323,9 @@ class mondial_relay_settings extends abstract_settings {
 				"class" => "",
 				"default" => "",
 				"custom_attributes" => [ 
-						"min" => "0",
-						"max" => "9999999",
-					],
+					"min" => "0",
+					"max" => "9999999",
+				],
 			],
 			[ 
 				"id" => "wms_mondial_relay_section_parcel",

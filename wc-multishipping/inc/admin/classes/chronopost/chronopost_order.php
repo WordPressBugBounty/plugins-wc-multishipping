@@ -46,7 +46,8 @@ class chronopost_order extends abstract_order {
 		'chronopost_relais_europe',
 		'chronopost_relais_dom',
 		'chronopost_ambient_relais_13',
-		'chronopost_2shop'
+		'chronopost_2shop',
+		'chronopost_2shop_europe'
 	];
 
 	public static function get_integration_helper() {

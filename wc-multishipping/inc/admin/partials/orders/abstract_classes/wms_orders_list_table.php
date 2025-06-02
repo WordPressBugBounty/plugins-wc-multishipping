@@ -78,7 +78,7 @@ class wms_orders_list_table extends \WP_List_Table {
 	}
 
 	function display_table() {
-		wp_enqueue_script( 'wms_chronopost_settings', WMS_ADMIN_JS_URL . 'chronopost/chronopost_print_label.min.js?t=' . time(), [ 'jquery', 'wp-i18n' ] );
+		wp_enqueue_script( 'wms_chronopost_settings', WMS_ADMIN_JS_URL . 'chronopost/chronopost_print_label.js?t=' . time(), [ 'jquery', 'wp-i18n' ] );
 		?>
 
 		<div class="wrap">
@@ -174,7 +174,7 @@ class wms_orders_list_table extends \WP_List_Table {
 
 		$countries_option = [ '' => __( 'Country', 'wc-multishipping' ) ];
 		array_walk( $countries, function ($one_country) use (&$countries_option) {
-			if ( ! empty ( $one_country ) )
+			if ( ! empty( $one_country ) )
 				$countries_option[ $one_country ] = WC()->countries->countries[ $one_country ];
 		} );
 

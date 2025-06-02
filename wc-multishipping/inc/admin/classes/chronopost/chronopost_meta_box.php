@@ -27,7 +27,7 @@ class chronopost_meta_box extends abstract_meta_box
         $this->shipping_method_id = chronopost_order::get_shipping_method_name($this->order);
         if (!array_key_exists($this->shipping_method_id, chronopost_order::AVAILABLE_SHIPPING_METHODS)) return;
 
-		wp_register_script( 'wms_meta_box', WMS_ADMIN_JS_URL . 'wms_meta_box.min.js?t=' . time(), [ 'jquery' ] );
+		wp_register_script( 'wms_meta_box', WMS_ADMIN_JS_URL . 'wms_meta_box.js?t=' . time(), [ 'jquery' ] );
 		wp_localize_script( 'wms_meta_box', 'wmsajaxurl', admin_url( 'admin-ajax.php' ) );
 		wp_enqueue_script( 'wms_meta_box' );
         
