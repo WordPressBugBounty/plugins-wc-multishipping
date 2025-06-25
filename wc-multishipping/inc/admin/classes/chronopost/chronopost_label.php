@@ -204,8 +204,8 @@ class chronopost_label extends abstract_label {
 				'recipientCountry' => substr( remove_accents( $order->get_shipping_country() ), 0, 2 ),
 				'recipientContactName' => substr( remove_accents( $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name() ), 0, 100 ),
 				'recipientEmail' => substr( $order->get_billing_email() ? $order->get_billing_email() : $customer_obj->get_email(), 0, 80 ),
-				'recipientPhone' => preg_replace( '/\s|(\+33|0033)(\d)/', '0$2', preg_replace( '/[^0-9\+\-]/', '', $custom_phone ?? $order->get_billing_phone() ) ),
-				'recipientMobilePhone' => preg_replace( '/\s|(\+33|0033)(\d)/', '0$2', preg_replace( '/[^0-9\+\-]/', '', $custom_phone ?? $order->get_billing_phone() ) ),
+				'recipientPhone' => preg_replace( '/\s|(\+33|0033)(\d)/', '0$2', preg_replace( '/[^0-9\+\-]/', '', $custom_phone ?: $order->get_billing_phone() ) ),
+				'recipientMobilePhone' => preg_replace( '/\s|(\+33|0033)(\d)/', '0$2', preg_replace( '/[^0-9\+\-]/', '', $custom_phone ?: $order->get_billing_phone() ) ),
 				'recipientPreAlert' => '',
 			];
 		} else {
