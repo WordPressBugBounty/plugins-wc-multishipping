@@ -88,8 +88,9 @@ class mondial_relay_abstract_shipping extends abstract_shipping {
 
 	public function calculate_shipping( $package = [] ) {
 		$cost = null;
-		$debug_mode = get_option( 'wms_mondial_relay_debug_mode' );
-
+		$debug_mode = get_option( 'wms_mondial_relay_debug_mode', true );
+		$is_admin = current_user_can( 'manage_woocommerce' );
+		
 		if ( mondial_relay_shipping_methods::get_one_country_capabilities_info( $package['destination']['country'], $this->id ) ) {
 			$total_weight = floatval( $this->get_option( 'packaging_weight', 0 ) );
 			$woocommerce_weight_unit = get_option( 'woocommerce_weight_unit' );
@@ -118,8 +119,6 @@ class mondial_relay_abstract_shipping extends abstract_shipping {
 
 			$free_shipping_amount = $this->get_option( 'free_shipping_condition', -1 );
 
-			$quickcost = $this->get_option( 'quickcost', 'no' ) == 'yes';
-
 
 			$matching_rates = [];
 
@@ -138,32 +137,16 @@ class mondial_relay_abstract_shipping extends abstract_shipping {
 			}
 
 			if ( empty( $matching_rates ) ) {
-				if ( $debug_mode ) {
-					add_action( 'woocommerce_review_order_after_shipping', function () {
-
-						$total_weight = floatval( $this->get_option( 'packaging_weight', 0 ) );
-						$woocommerce_weight_unit = get_option( 'woocommerce_weight_unit' );
-						if ( $woocommerce_weight_unit == 'g' && $total_weight > 0 )
-							$total_weight = $total_weight * 1000;
-
-						wc_print_notice(
-							sprintf(
-								__( 'No %s shipping method displayed: The current cart doesn\'t match any rates you\'ve set in the shipping method pricing configuration.', 'wc-multishipping' ),
-								'Mondial Relay'
-
-							), 'notice'
-						);
-						wc_print_notice(
-							sprintf(
-								__( 'Cart total amount: %1$s%2$s / Cart total weight: %3$s%4$s', 'wc-multishipping' ),
-								$total_weight + WC()->cart->cart_contents_total,
-								get_woocommerce_currency_symbol(),
-								WC()->cart->cart_contents_weight,
-								get_option( 'woocommerce_weight_unit' )
-							), 'notice'
-						);
-					}, 10 );
-				}
+				$this->add_debug_message( [
+					'debug_mode' => $debug_mode,
+					'is_admin' => $is_admin,
+					'total_weight' => $total_weight,
+					'total_price' => $total_price,
+					'pricing_condition' => $pricing_condition,
+					'rates' => $rates,
+					'reason' => 'no_matching_rates',
+					'carrier_name' => 'Mondial Relay'
+				] );
 
 				return;
 			}
@@ -192,17 +175,17 @@ class mondial_relay_abstract_shipping extends abstract_shipping {
 			}
 
 			if ( empty( $matching_rates_shipping_classes ) ) {
-				if ( $debug_mode ) {
-					add_action( 'woocommerce_review_order_after_shipping', function () {
-						wc_print_notice(
-							sprintf(
-								__( 'No %s shipping method displayed: The products in the cart does not belong to the shippings classes set in the shipping method pricing configuration.', 'wc-multishipping' ),
-								'Mondial Relay'
-
-							), 'notice'
-						);
-					}, 10 );
-				}
+				$this->add_debug_message( [
+					'debug_mode' => $debug_mode,
+					'is_admin' => $is_admin,
+					'total_weight' => $total_weight,
+					'total_price' => $total_price,
+					'pricing_condition' => $pricing_condition,
+					'cart_shipping_classes' => $cart_shipping_classes,
+					'rates' => $rates,
+					'reason' => 'no_matching_shipping_classes',
+					'carrier_name' => 'Mondial Relay'
+				] );
 				return;
 			}
 
@@ -242,4 +225,5 @@ class mondial_relay_abstract_shipping extends abstract_shipping {
 			}
 		}
 	}
+
 }

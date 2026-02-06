@@ -1,0 +1,836 @@
+$header_height: auto;
+$address_container_height: 100px;
+$light-grey: rgba(210, 210, 210, 0.5);
+$medium-grey: rgba(210, 210, 210, 0.7);
+$primary-color: #2271b1;
+$primary-hover: #135e96;
+$error-color: #dc3232;
+
+.wms_pickup_modal {
+  section {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  article {
+    flex: 1;
+    overflow: auto;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: 0;
+    max-height: none !important; // Override inline style from WooCommerce Backbone Modal
+  }
+
+  .wc-backbone-modal {
+    article {
+      overflow: auto;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    .wc-backbone-modal-content {
+      position: fixed;
+      background: #fff;
+      z-index: 100000;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      max-width: 95vw !important;
+      max-height: 95vh !important;
+      width: 1200px !important;
+      height: auto;
+
+      @media screen and (max-width: 1024px) {
+        width: 95vw !important;
+      }
+
+      @media screen and (max-width: 782px) {
+        width: 100%;
+        height: 100%;
+        min-width: 100%;
+      }
+
+      @media screen and (max-width: 480px) {
+        max-width: 100vw !important;
+        max-height: 100vh !important;
+        width: 100vw !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+      }
+    }
+  }
+
+  .wc-backbone-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    min-height: 360px;
+    background: #000;
+    opacity: 0.7;
+    z-index: 99900;
+  }
+
+  .wc-backbone-modal-main {
+    padding: 0 !important;
+    overflow: hidden !important;
+
+    .wc-backbone-modal-loader {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1000;
+      background-color: rgba(150, 150, 150, 0.5);
+
+      &:after {
+        content: "";
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        border: 3px solid rgba(0, 0, 0, 0.3);
+        border-radius: 50%;
+        border-top-color: #000;
+        animation: spin 1s ease-in-out infinite;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        margin-left: -15px;
+        margin-top: -15px;
+      }
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .wc-backbone-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      height: $header_height;
+      background: #f9f9f9;
+      padding: 20px;
+      border-bottom: 1px solid #ddd;
+      flex-shrink: 0;
+
+      h1 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        line-height: 1.5em;
+      }
+
+      .modal-close-link {
+        cursor: pointer;
+        color: #777;
+        height: 54px;
+        width: 54px;
+        padding: 0;
+        position: absolute;
+        top: 0;
+        right: 0;
+        text-align: center;
+        border: 0;
+        border-left: 1px solid #ddd;
+        background-color: transparent;
+        transition: color 0.1s ease-in-out, background 0.1s ease-in-out;
+        overflow: auto;
+
+        &::before {
+          font: normal 22px/50px "dashicons" !important;
+          color: #666;
+          display: block;
+          content: "\f335";
+          font-weight: 300;
+        }
+
+        &:hover,
+        &:focus {
+          background: #ddd;
+          border-color: #ccc;
+          color: #000;
+        }
+
+        &:focus {
+          outline: none;
+        }
+      }
+
+      // Mobile responsive
+      @media screen and (max-width: 768px) {
+        position: relative;
+        flex-direction: column;
+        padding-top: 50px;
+
+        & > div:last-child {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          z-index: 10;
+        }
+
+        .modal-close-link {
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #fff;
+          border: 1px solid #ddd;
+          border-radius: 50%;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+      }
+
+      @media screen and (max-width: 480px) {
+        padding: 10px;
+        padding-top: 45px;
+
+        .modal-close-link {
+          width: 32px;
+          height: 32px;
+          font-size: 18px;
+        }
+      }
+    }
+
+    // Address form
+    .wms_pickup_modal_address {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 10px;
+      flex: 1;
+      margin-right: 20px;
+
+      // Remove WooCommerce form-row margins
+      p.form-row {
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      .woocommerce-input-wrapper {
+        width: 100%;
+      }
+
+      input,
+      select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+        box-sizing: border-box;
+        height: auto;
+
+        &:focus {
+          outline: none;
+          border-color: $primary-color;
+          box-shadow: 0 0 0 1px $primary-color;
+        }
+      }
+
+      label {
+        display: none; // Hide WooCommerce labels (we use placeholders)
+      }
+
+      @media screen and (max-width: 1024px) {
+        grid-template-columns: 1fr 1fr;
+
+        .wms_pickup_modal_address_country,
+        .wms_pickup_modal_address_find_pickup {
+          grid-column: span 2;
+        }
+      }
+
+      @media screen and (max-width: 768px) {
+        grid-template-columns: 1fr;
+        margin-right: 0;
+        margin-bottom: 0;
+        width: 100%;
+
+        .wms_pickup_modal_address_country,
+        .wms_pickup_modal_address_find_pickup {
+          grid-column: span 1;
+        }
+      }
+
+      @media screen and (max-width: 480px) {
+        input,
+        select {
+          font-size: 16px; // Prevent zoom on iOS
+          padding: 12px;
+        }
+      }
+    }
+
+    .wms_pickup_modal_address_search {
+      padding: 10px 20px;
+      background: $primary-color;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      white-space: nowrap;
+      transition: background 0.2s;
+
+      &:hover {
+        background: $primary-hover;
+      }
+
+      &:active {
+        transform: translateY(1px);
+      }
+
+      @media screen and (max-width: 480px) {
+        padding: 12px 16px;
+        font-size: 16px;
+      }
+    }
+
+    .wms_pickup_modal_address_country,
+    .wms_pickup_modal_address_city,
+    .wms_pickup_modal_address_zip-code,
+    .wms_pickup_modal_address_find_pickup {
+      display: inline-block;
+    }
+
+    .wms_pickup_modal_address_country,
+    .wms_pickup_modal_address_city,
+    .wms_pickup_modal_address_zip-code {
+      width: 250px;
+
+      @media screen and (max-width: 782px) {
+        width: 100%;
+        padding-bottom: 0 !important;
+        margin-bottom: 0 !important;
+      }
+    }
+
+    // Map and listing container
+    .wms_pickup_modal_map_container {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 0;
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
+
+      @media screen and (max-width: 1024px) {
+        grid-template-columns: 1fr 350px;
+      }
+
+      @media screen and (max-width: 768px) {
+        grid-template-columns: 1fr;
+        grid-template-rows: 250px 1fr;
+      }
+
+      @media screen and (max-width: 480px) {
+        grid-template-rows: 200px 1fr;
+      }
+    }
+
+    .wms_pickup_modal_map {
+      position: relative;
+      height: 100%;
+      background: #e5e3df;
+      overflow: hidden;
+
+      @media (max-width: 1023px) {
+        width: 100%;
+        height: 100%;
+      }
+    }
+
+    .wms_pickup_modal_listing {
+      height: 100%;
+      overflow-y: auto;
+      background: #fff;
+      border-left: 1px solid #ddd;
+      padding: 15px;
+
+      &::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+
+        &:hover {
+          background: #555;
+        }
+      }
+
+      @media screen and (max-width: 768px) {
+        border-left: none;
+        border-top: 1px solid #ddd;
+        max-height: none;
+        height: auto;
+        flex: 1;
+        padding: 12px;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch; // Smooth scroll on iOS
+      }
+
+      @media screen and (max-width: 480px) {
+        padding: 10px;
+        max-height: none;
+        height: auto;
+        flex: 1;
+      }
+
+      .wms_pickup_modal_listing_one {
+        padding: 15px;
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: #fff;
+
+        .wms_pickup_address1,
+        .wms_pickup_address2,
+        .wms_pickup_open_time {
+          font-size: 13px;
+          color: #666;
+          margin-bottom: 4px;
+        }
+
+        .wms_pickup_modal_listing_one_button_ship {
+          width: 100%;
+          margin-top: 12px;
+          padding: 10px;
+          background: $primary-color;
+          color: #fff;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: 500;
+          transition: background 0.2s;
+
+          &:hover {
+            background: $primary-hover;
+          }
+        }
+
+        &.wms_is_selected {
+          border-color: $primary-color;
+          background: #f0f6fc;
+          box-shadow: 0 0 0 2px rgba(34, 113, 177, 0.2);
+        }
+
+        &:hover {
+          border-color: $primary-color;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          transform: translateY(-2px);
+        }
+
+        & > p,
+        & > ul {
+          margin-bottom: 0.1rem;
+        }
+
+        @media screen and (max-width: 768px) {
+          padding: 12px;
+          margin-bottom: 10px;
+        }
+
+        @media screen and (max-width: 480px) {
+          padding: 10px;
+          margin-bottom: 8px;
+
+          .wms_pickup_address1,
+          .wms_pickup_address2 {
+            font-size: 11px;
+            margin-bottom: 3px;
+          }
+
+          .wms_pickup_modal_listing_one_button_ship {
+            padding: 10px;
+            font-size: 13px;
+            margin-top: 8px;
+          }
+        }
+      }
+
+      @media screen and (max-width: 1280px) {
+        float: none;
+        width: 100%;
+        height: auto;
+        overflow-y: auto;
+        padding-left: inherit;
+        padding-top: 10px;
+      }
+    }
+
+    .wms_pickup_name {
+      font-weight: 600;
+      font-size: 15px;
+      color: #1e1e1e;
+      margin-bottom: 8px;
+
+      @media screen and (max-width: 768px) {
+        font-size: 14px;
+      }
+
+      @media screen and (max-width: 480px) {
+        font-size: 13px;
+        margin-bottom: 6px;
+      }
+    }
+
+    .wms_pickup_open_time {
+      width: 100%;
+      margin: 10px 0;
+      font-size: 12px;
+      border-collapse: collapse;
+
+      td {
+        padding: 4px 8px;
+        border-bottom: 1px solid #f0f0f0;
+
+        &:first-child {
+          font-weight: 500;
+          color: #666;
+          width: 80px;
+        }
+      }
+
+      @media screen and (max-width: 768px) {
+        font-size: 11px;
+      }
+
+      @media screen and (max-width: 480px) {
+        font-size: 10px;
+        margin: 8px 0;
+
+        td {
+          padding: 2px 4px;
+        }
+      }
+    }
+
+    .wms_pickup_country {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 4px;
+
+      @media screen and (max-width: 480px) {
+        font-size: 11px;
+        margin-bottom: 3px;
+      }
+    }
+
+    .wms_select_pickup_point_button {
+      margin: 10px;
+    }
+
+    // Error message
+    .wms-error-message {
+      padding: 15px;
+      margin: 15px;
+      background: #fef7f7;
+      border-left: 4px solid $error-color;
+      border-radius: 4px;
+      color: $error-color;
+
+      strong {
+        display: block;
+        margin-bottom: 5px;
+      }
+    }
+
+    // Modal content wrapper
+    .wms_modal_content {
+      display: flex;
+      flex-direction: column;
+      height: 90vh !important;
+      max-height: 800px;
+
+      @media screen and (max-width: 768px) {
+        height: 95vh !important;
+      }
+
+      @media screen and (max-width: 480px) {
+        height: 100vh !important;
+        max-height: none;
+      }
+    }
+  }
+
+  #wms_pickup_modal_map_openstreemap,
+  #wms_pickup_modal_map_googlemaps {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+// Mondial Relay specific styles
+.wms_pickup_modal_mondial_relay {
+  .wc-backbone-modal-header {
+    padding: 15px 20px;
+
+    .modal-close-link {
+      width: 44px;
+      height: 44px;
+
+      @media screen and (max-width: 768px) {
+        width: 40px;
+        height: 40px;
+        top: 8px;
+        right: 8px;
+      }
+    }
+  }
+
+  article {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden; // Pas de scroll sur article
+  }
+
+  .wms_mondial_relay_container {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+    height: 100%; // Force la hauteur à 100% de article
+
+    @media screen and (max-width: 768px) {
+      flex-direction: column;
+    }
+  }
+
+  .wms_pickup_modal_map {
+    flex: 3; // 75% sur desktop
+    background: #f5f5f5;
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+
+    @media screen and (max-width: 1024px) {
+      flex: 2; // 66% sur tablette
+    }
+
+    @media screen and (max-width: 768px) {
+      flex: 1; // Prend tout l'espace disponible sur mobile
+      min-height: 0;
+
+      // Forcer flexbox sur mobile uniquement
+      .MR-Widget {
+        height: 100% !important;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .MRW-Content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .MRW-Results {
+        flex: 1;
+        display: flex;
+        flex-direction: row;
+        overflow: hidden;
+      }
+
+      .MRW-Map {
+        height: 100% !important; // Override inline style
+        max-height: 100% !important;
+        flex: 1;
+      }
+
+      .MRW-RList {
+        overflow-y: auto;
+        max-height: 100%;
+      }
+    }
+  }
+
+  .wms_mondial_relay_sidebar {
+    display: flex;
+    flex-direction: column;
+    flex: 1; // 25% sur desktop
+    background: #fff;
+    border-left: 1px solid #ddd;
+    padding: 20px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-width: 250px;
+
+    @media screen and (max-width: 1024px) {
+      min-width: 200px;
+    }
+
+    @media screen and (max-width: 768px) {
+      flex: 0 0 auto; // Ne grandit pas, ne rétrécit pas, hauteur auto
+      min-width: 0;
+      border-left: none;
+      border-top: 1px solid #ddd;
+      padding: 12px 15px;
+      overflow-y: visible; // Pas de scroll sur mobile
+    }
+
+    @media screen and (max-width: 480px) {
+      padding: 10px 15px;
+    }
+
+    .wms_mondial_relay_selection {
+      flex: 1;
+      margin-bottom: 20px;
+
+      @media screen and (max-width: 768px) {
+        display: none; // Cache le récap sur mobile
+      }
+
+      h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1e1e1e;
+        margin: 0 0 15px 0;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #f0f0f0;
+
+        @media screen and (max-width: 480px) {
+          font-size: 14px;
+          margin-bottom: 10px;
+        }
+      }
+
+      #wms_mondial_relay_selected_info {
+        padding: 15px;
+        background: #f9f9f9;
+        border-radius: 6px;
+        border: 1px solid #e0e0e0;
+        min-height: 120px;
+
+        &.wms_selected_info_empty {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+
+          p {
+            color: #666;
+            font-size: 14px;
+            margin: 0;
+            line-height: 1.5;
+
+            @media screen and (max-width: 480px) {
+              font-size: 13px;
+            }
+          }
+        }
+
+        &.wms_selected_info_filled {
+          background: #f0f6fc;
+          border-color: $primary-color;
+
+          .wms_selected_name {
+            font-weight: 600;
+            font-size: 15px;
+            color: #1e1e1e;
+            margin-bottom: 8px;
+
+            @media screen and (max-width: 480px) {
+              font-size: 14px;
+            }
+          }
+
+          .wms_selected_address,
+          .wms_selected_city,
+          .wms_selected_country {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 4px;
+            line-height: 1.4;
+
+            @media screen and (max-width: 480px) {
+              font-size: 12px;
+            }
+          }
+
+          .wms_selected_id {
+            font-size: 11px;
+            color: #999;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #e0e0e0;
+          }
+        }
+
+        @media screen and (max-width: 768px) {
+          min-height: 100px;
+          padding: 12px;
+        }
+
+        @media screen and (max-width: 480px) {
+          min-height: 80px;
+          padding: 10px;
+        }
+      }
+    }
+
+    .wms_select_pickup_point_button {
+      width: 100%;
+      padding: 14px 20px;
+      background: $primary-color;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      transition: all 0.2s;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      margin: 0 auto; // Centre le bouton horizontalement
+
+      &:hover:not(:disabled) {
+        background: $primary-hover;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      }
+
+      &:active:not(:disabled) {
+        transform: translateY(0);
+      }
+
+      &:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        opacity: 0.6;
+        box-shadow: none;
+      }
+
+      @media screen and (max-width: 768px) {
+        padding: 16px 20px;
+        font-size: 16px;
+        max-width: 100%; // Prend toute la largeur sur mobile
+      }
+
+      @media screen and (max-width: 480px) {
+        padding: 14px 16px;
+        font-size: 15px;
+      }
+    }
+  }
+}

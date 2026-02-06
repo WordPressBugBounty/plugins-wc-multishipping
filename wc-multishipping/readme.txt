@@ -1,15 +1,15 @@
-=== Mondial Relay & Chronopost plugin for WooCommerce - WCMultiShipping ===
+=== WCMultiShipping — Mondial Relay, Inpost & Chronopost for WooCommerce ===
 Contributors: woomultishipping
 Donate link:
 Tags: WooCommerce, Mondial Relay, Chronopost
 Requires at least: 4.7
 Tested up to: 6.8
-Stable tag: 2.5.8
+Stable tag: 3.0.2
 Requires PHP: 5.7
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-Add Mondial Relay & Chronopost to Woocommerce
+Add Mondial Relay, Inpost, Chronopost & Chronofresh to Woocommerce
 Create your labels and send your shipments easily.
 
 == Description ==
@@ -53,6 +53,50 @@ For a detailed guide on configuring Mondial Relay with WooCommerce, visit our co
 
 For step-by-step instructions on setting up Chronopost, please visit: [Chronopost WooCommerce Setup](https://www.wcmultishipping.com/plugin-chronopost-woocommerce/)
 
+### External Services
+
+This plugin connects to external third-party services to provide shipping functionality. Below is a detailed description of each service, what data is transmitted, and when:
+
+**1. Mondial Relay API**
+- **Purpose**: Calculate shipping rates, retrieve pickup points, and generate shipping labels for Mondial Relay deliveries.
+- **Data sent**: Order details (weight, dimensions, destination address), customer information (name, address, phone), and pickup point selection.
+- **When**: When customers select Mondial Relay shipping methods during checkout, and when store administrators generate shipping labels.
+- **Service provider**: Mondial Relay
+- **Terms of service**: https://www.mondialrelay.fr/conditions-generales-dutilisation/
+- **Privacy policy**: https://www.mondialrelay.fr/politique-de-confidentialite/
+
+**2. Chronopost API**
+- **Purpose**: Calculate shipping rates, retrieve pickup points, and generate shipping labels for Chronopost deliveries.
+- **Data sent**: Order details (weight, dimensions, destination address), customer information (name, address, phone), and service type selection.
+- **When**: When customers select Chronopost shipping methods during checkout, and when store administrators generate shipping labels.
+- **Service provider**: Chronopost (DPDgroup)
+- **Terms of service**: https://www.chronopost.fr/fr/conditions-generales
+- **Privacy policy**: https://www.chronopost.fr/fr/donnees-personnelles
+
+**3. UPS API**
+- **Purpose**: Calculate shipping rates and generate shipping labels for UPS deliveries.
+- **Data sent**: Order details (weight, dimensions, destination address), customer information (name, address, phone).
+- **When**: When customers select UPS shipping methods during checkout, and when store administrators generate shipping labels.
+- **Service provider**: United Parcel Service (UPS)
+- **Terms of service**: https://www.ups.com/us/en/help-center/legal-terms-conditions.page
+- **Privacy policy**: https://www.ups.com/us/en/help-center/legal-terms-conditions/privacy-notice.page
+
+**4. WCMultiShipping Service (wcmultishipping.com)**
+- **Purpose**: Plugin registration, license validation, and proxy service for downloading shipping labels when direct API access fails.
+- **Data sent**: 
+  - Registration: Email address, site URL, plugin version
+  - Label download proxy: Label URL from carrier API (only when direct download fails)
+  - Deactivation feedback: Optional feedback data if user chooses to provide it
+- **When**: 
+  - During plugin activation (registration)
+  - When direct label download from carrier APIs fails (fallback proxy)
+  - When plugin is deactivated and user provides feedback (optional)
+- **Service provider**: WCMultiShipping
+- **Terms of service**: https://www.wcmultishipping.com/terms-of-service/
+- **Privacy policy**: https://www.wcmultishipping.com/privacy-policy/
+
+By using this plugin, you acknowledge that data will be transmitted to these external services as described above. Please review each service's terms and privacy policies to ensure compliance with your local data protection regulations.
+
 ### Installation
 
 1. Download and install the WcMultiShipping plugin via the "Plugins" section of your WordPress admin panel.
@@ -85,6 +129,14 @@ We provide a detailed setup guide on our website. You can follow the steps here:
 3. Chronopost shipping methods configuration
 
 == Changelog ==
+
+= 3.0.0 - June 2025 =
+WooCommerce new version compatibilty
+PickUp selection popup design improvements
+Full French translation
+Code improvement
+CURL disabled error displayed
+Debug mode 
 
 = 2.5.6 - June 2025 =
 MR Label fix 

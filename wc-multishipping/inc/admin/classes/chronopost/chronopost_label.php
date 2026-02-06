@@ -142,8 +142,8 @@ class chronopost_label extends abstract_label {
 					0,
 					100
 				),
-				'shipperPhone' => substr( trim( preg_replace( '/[^0-9\.\-]/', ' ', $order->get_billing_phone() ) ), 0, 17 ),
-				'shipperMobilePhone' => trim( substr( $order->get_billing_phone(), 0, 17 ) ),
+				'shipperPhone' => substr( preg_replace( '/[^0-9]/', '', $order->get_shipping_phone() ? $order->get_shipping_phone() : $order->get_billing_phone() ), 0, 17 ),
+				'shipperMobilePhone' => substr( preg_replace( '/[^0-9]/', '', $order->get_shipping_phone() ? $order->get_shipping_phone() : $order->get_billing_phone() ), 0, 17 ),
 				'shipperPreAlert' => '',
 			];
 		}
@@ -204,8 +204,8 @@ class chronopost_label extends abstract_label {
 				'recipientCountry' => substr( remove_accents( $order->get_shipping_country() ), 0, 2 ),
 				'recipientContactName' => substr( remove_accents( $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name() ), 0, 100 ),
 				'recipientEmail' => substr( $order->get_billing_email() ? $order->get_billing_email() : $customer_obj->get_email(), 0, 80 ),
-				'recipientPhone' => preg_replace( '/\s|(\+33|0033)(\d)/', '0$2', preg_replace( '/[^0-9\+\-]/', '', $custom_phone ?: $order->get_billing_phone() ) ),
-				'recipientMobilePhone' => preg_replace( '/\s|(\+33|0033)(\d)/', '0$2', preg_replace( '/[^0-9\+\-]/', '', $custom_phone ?: $order->get_billing_phone() ) ),
+				'recipientPhone' => substr( preg_replace( '/[^0-9]/', '', $custom_phone ?: ( $order->get_shipping_phone() ? $order->get_shipping_phone() : $order->get_billing_phone() ) ), 0, 17 ),
+				'recipientMobilePhone' => substr( preg_replace( '/[^0-9]/', '', $custom_phone ?: ( $order->get_shipping_phone() ? $order->get_shipping_phone() : $order->get_billing_phone() ) ), 0, 17 ),
 				'recipientPreAlert' => '',
 			];
 		} else {
@@ -221,8 +221,8 @@ class chronopost_label extends abstract_label {
 				'recipientCountry' => substr( get_option( 'wms_chronopost_shipper_country', '' ), 0, 2 ),
 				'recipientContactName' => substr( get_option( 'wms_chronopost_shipper_contact_name', '' ), 0, 80 ),
 				'recipientEmail' => substr( get_option( 'wms_chronopost_shipper_email', '' ), 0, 100 ),
-				'recipientPhone' => preg_replace( '/\s|(\+33|0033)(\d)/', '0$2', preg_replace( '/[^0-9\+\-]/', '', get_option( 'wms_chronopost_shipper_phone', '' ) ) ),
-				'recipientMobilePhone' => preg_replace( '/\s|(\+33|0033)(\d)/', '0$2', preg_replace( '/[^0-9\+\-]/', '', get_option( 'wms_chronopost_shipper_mobile_phone', '' ) ) ),
+				'recipientPhone' => substr( preg_replace( '/[^0-9]/', '', get_option( 'wms_chronopost_shipper_phone', '' ) ), 0, 17 ),
+				'recipientMobilePhone' => substr( preg_replace( '/[^0-9]/', '', get_option( 'wms_chronopost_shipper_mobile_phone', '' ) ), 0, 17 ),
 				'recipientPreAlert' => '',
 			];
 		}
@@ -376,8 +376,9 @@ class chronopost_label extends abstract_label {
 		$shipping_method = reset( $order_shipping_method );
 		$shipping_method_id = $shipping_method->get_method_id();
 
-		if ( $shipping_method_id != 'chronopost_13_fresh' )
+		if ( $shipping_method_id !== 'chronopost_13_fresh' && $shipping_method_id !== 'chronopost_18_fresh') {
 			return $this;
+		}
 
 		$expiration_date = $order->get_meta( '_wms_chronopost_expiration_date', true );
 
@@ -389,6 +390,7 @@ class chronopost_label extends abstract_label {
 
 		$scheduled_value = [ 
 			'expirationDate' => $expiration_date,
+			
 		];
 
 		$this->payload['scheduledValue'] = $scheduled_value;

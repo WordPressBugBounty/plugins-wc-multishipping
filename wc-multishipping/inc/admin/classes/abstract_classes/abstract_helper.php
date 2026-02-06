@@ -93,6 +93,35 @@ abstract class abstract_helper {
 			$this,
 			'add_screen_option',
 		] );
+		add_action( "load-$hook", [ 
+			$this,
+			'check_installation_registered_before_access',
+		] );
+		
+	}
+
+	public function check_installation_registered_before_access() {
+		$installation_registered = get_option( 'wms_customer_installation_registered', false );
+		
+		if ( $installation_registered ) {
+			return;
+		}
+		
+		$api_key = get_option( 'wms_api_key', '' );
+		
+		if ( ! empty( $api_key ) ) {
+			\WCMultiShipping\inc\admin\classes\customer\wms_customer_registration::send_to_api( array(
+				'wms_api_key' => $api_key,
+				'is_fresh_new_install' => \WCMultiShipping\inc\admin\classes\customer\wms_customer_registration::is_fresh_new_install(),
+			) );
+			
+			update_option( 'wms_customer_installation_registered', true );
+			
+			return;
+		}
+		
+		wp_safe_redirect( admin_url( 'admin.php?page=wc-multishipping&email_required=1' ) );
+		exit;
 	}
 
 	public function wms_set_option( $status, $option, $value ) {
@@ -163,25 +192,71 @@ abstract class abstract_helper {
 			return;
 		}
 
-		if ( in_array( $new_method, $order_class::ID_SHIPPING_METHODS_RELAY ) ) {
-			$relay_info = json_decode( stripslashes( $wms_pickup_info ) );
-			if ( empty( $relay_info ) || ! is_object( $relay_info ) )
-				return;
+		if ( in_array( $new_method, $order_class::ID_SHIPPING_METHODS_RELAY, true ) ) {
+			$relay_info_raw = json_decode( stripslashes( $wms_pickup_info ), true );
+			$relay_info     = null;
 
-			$relay_info->pickup_id = $wms_pickup_point;
+			if ( is_array( $relay_info_raw ) ) {
+				if ( array_keys( $relay_info_raw ) === range( 0, count( $relay_info_raw ) - 1 ) ) {
+					$pickup_name    = isset( $relay_info_raw[0] ) ? $relay_info_raw[0] : '';
+					$pickup_address = isset( $relay_info_raw[1] ) ? $relay_info_raw[1] : '';
+					$city_zip       = isset( $relay_info_raw[2] ) ? $relay_info_raw[2] : '';
+					$pickup_country = isset( $relay_info_raw[3] ) ? $relay_info_raw[3] : '';
 
-			$order->update_meta_data(
-				'_wms_' . static::SHIPPING_PROVIDER_ID . '_pickup_info',
-				array_map( 'sanitize_text_field', (array) $relay_info )
-			);
+					$pickup_city    = '';
+					$pickup_zipcode = '';
 
-			$order->set_shipping_address_1( $relay_info->pickup_address );
-			$order->set_shipping_postcode( $relay_info->pickup_zipcode );
-			$order->set_shipping_city( $relay_info->pickup_city );
-			$order->set_shipping_country( $relay_info->pickup_country );
-			$order->set_shipping_company( $relay_info->pickup_name );
+					if ( ! empty( $city_zip ) ) {
+						$parts = preg_split( '/\s+/', $city_zip );
+						if ( count( $parts ) > 1 ) {
+							$pickup_zipcode = array_pop( $parts );
+							$pickup_city    = implode( ' ', $parts );
+						} else {
+							$pickup_city = $city_zip;
+						}
+					}
 
-			$order->save();
+					$relay_info = (object) array(
+						'pickup_name'    => $pickup_name,
+						'pickup_address' => $pickup_address,
+						'pickup_city'    => $pickup_city,
+						'pickup_zipcode' => $pickup_zipcode,
+						'pickup_country' => $pickup_country,
+					);
+				} else {
+					$relay_info = (object) $relay_info_raw;
+				}
+			} elseif ( is_object( $relay_info_raw ) ) {
+				$relay_info = $relay_info_raw;
+			}
+
+			if ( $relay_info && is_object( $relay_info ) ) {
+				$relay_info->pickup_id = $wms_pickup_point;
+
+				$order->update_meta_data(
+					'_wms_' . static::SHIPPING_PROVIDER_ID . '_pickup_info',
+					array_map( 'sanitize_text_field', (array) $relay_info )
+				);
+
+
+				if ( ! empty( $relay_info->pickup_address ) ) {
+					$order->set_shipping_address_1( $relay_info->pickup_address );
+				}
+				if ( ! empty( $relay_info->pickup_zipcode ) ) {
+					$order->set_shipping_postcode( $relay_info->pickup_zipcode );
+				}
+				if ( ! empty( $relay_info->pickup_city ) ) {
+					$order->set_shipping_city( $relay_info->pickup_city );
+				}
+				if ( ! empty( $relay_info->pickup_country ) ) {
+					$order->set_shipping_country( $relay_info->pickup_country );
+				}
+				if ( ! empty( $relay_info->pickup_name ) ) {
+					$order->set_shipping_company( $relay_info->pickup_name );
+				}
+
+				$order->save();
+			}
 		}
 
 		$shipping_item = $order->get_item( $wms_order_item_id );
@@ -480,13 +555,13 @@ abstract class abstract_helper {
 
 			$modal_id = 'wms_pickup_open_modal_mondial_relay';
 			ob_start();
-			include WMS_PARTIALS . 'pickups' . DS . 'mondial_relay' . DS . 'widget.php';
+			include WMS_SHARED_PARTIALS . 'pickups' . DS . 'mondial_relay' . DS . 'widget.php';
 			$select_pickup_button = ob_get_clean();
 		} else if ( 'openstreetmap' == $map_to_use ) {
 
 			$modal_id = 'wms_pickup_open_modal_openstreetmap';
 			ob_start();
-			include WMS_PARTIALS . 'pickups' . DS . 'openstreetmap' . DS . 'widget.php';
+			include WMS_SHARED_PARTIALS . 'pickups' . DS . 'openstreetmap' . DS . 'widget.php';
 			$select_pickup_button = ob_get_clean();
 		} else {
 
@@ -495,10 +570,10 @@ abstract class abstract_helper {
 				$modal_id = 'wms_pickup_open_modal_google_maps';
 
 				if ( ! wp_style_is( 'wms_pickup_CSS', 'enqueued' ) )
-					include WMS_PARTIALS . 'pickups' . DS . 'google_maps' . DS . 'modal.php';
+					include WMS_SHARED_PARTIALS . 'pickups' . DS . 'google_maps' . DS . 'modal.php';
 
 				ob_start();
-				include WMS_PARTIALS . 'pickups' . DS . 'google_maps' . DS . 'button.php';
+				include WMS_SHARED_PARTIALS . 'pickups' . DS . 'google_maps' . DS . 'button.php';
 				$select_pickup_button = ob_get_clean();
 			} else {
 				$select_pickup_button = '<div id="wms_google_maps_issue">' . sprintf( __( 'Can\'t display the pick up selection button. No Google Maps Api Key set in your %s plugin configuration.', 'wc-multishipping' ), static::SHIPPING_PROVIDER_DISPLAYED_NAME ) . '</div>';
@@ -507,7 +582,7 @@ abstract class abstract_helper {
 
 		include WMS_PARTIALS . 'pickups' . DS . 'admin_pickup_selection.php';
 
-		wp_enqueue_style( 'wms_pickup_CSS', WMS_ADMIN_CSS_URL . 'pickups/wooshippping_pickup_widget.min.css?time=' . time() );
+		wp_enqueue_style( 'wms_pickup_CSS', WMS_SHARED_CSS_URL . 'pickups/wooshippping_pickup_widget.min.css?time=' . time() );
 	}
 
 	function add_admin_order_page_assets( $order ) {

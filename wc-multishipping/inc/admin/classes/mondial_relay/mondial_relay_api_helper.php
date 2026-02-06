@@ -19,17 +19,36 @@ class mondial_relay_api_helper {
 		if ( empty( $params ) )
 			return false;
 
-		ini_set( 'default_socket_timeout', 5000 );
-		$client = new SoapClient( self::API_URL, [ 
-			'trace' => true,
-			'cache_wsdl' => WSDL_CACHE_NONE,
-			'connection_timeout' => 5000,
-		] );
-		$result = $client->WSI4_PointRelais_Recherche( $params );
+		if ( ! extension_loaded( 'curl' ) ) {
+			$error_obj = new \stdClass();
+			$error_obj->STAT = '999';
+			$error_obj->error_message = __( 'The CURL extension is not enabled on this server. Please contact your hosting provider to enable it. This extension is required to retrieve pickup points.', 'wc-multishipping' );
+			return $error_obj;
+		}
 
-		return $result->WSI4_PointRelais_RechercheResult;
+		try {
+			ini_set( 'default_socket_timeout', 5000 );
+			$client = new SoapClient( self::API_URL, [ 
+				'trace' => true,
+				'cache_wsdl' => WSDL_CACHE_NONE,
+				'connection_timeout' => 5000,
+			] );
+			$result = $client->WSI4_PointRelais_Recherche( $params );
 
-		return false;
+			return $result->WSI4_PointRelais_RechercheResult;
+		} catch ( \SoapFault $e ) {
+			wms_logger( sprintf( __( 'Mondial Relay SOAP Error: %s', 'wc-multishipping' ), $e->getMessage() ) );
+			$error_obj = new \stdClass();
+			$error_obj->STAT = '999';
+			$error_obj->error_message = __( 'Unable to connect to Mondial Relay API. Please try again later.', 'wc-multishipping' );
+			return $error_obj;
+		} catch ( \Exception $e ) {
+			wms_logger( sprintf( __( 'Mondial Relay Error: %s', 'wc-multishipping' ), $e->getMessage() ) );
+			$error_obj = new \stdClass();
+			$error_obj->STAT = '999';
+			$error_obj->error_message = __( 'An unexpected error occurred while retrieving pickup points.', 'wc-multishipping' );
+			return $error_obj;
+		}
 	}
 
 	public function register_parcels( $params ) {

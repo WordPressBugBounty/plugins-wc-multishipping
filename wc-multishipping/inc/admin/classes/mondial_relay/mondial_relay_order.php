@@ -28,10 +28,12 @@ class mondial_relay_order extends abstract_order
         'mondial_relay_domicile_2_livreurs' => 'Livraison Domicile 2 Livreurs',
         'mondial_relay_domicile_inf_30' => 'Livraison Domicile <30kg',
         'mondial_relay_point_relais' => 'Livraison Point Relais',
+        'mondial_relay_lockers' => 'Livraison Lockers',
     ];
 
     const ID_SHIPPING_METHODS_RELAY = [
         'mondial_relay_point_relais',
+        'mondial_relay_lockers',
     ];
 
     public static function get_integration_helper()

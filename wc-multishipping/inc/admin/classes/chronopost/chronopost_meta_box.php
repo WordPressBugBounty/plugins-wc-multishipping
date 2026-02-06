@@ -121,6 +121,7 @@ class chronopost_meta_box extends abstract_meta_box
 
         $shipping_methods_with_expiration_date = [
             'chronopost_13_fresh',
+            'chronopost_18_fresh',
         ];
 
         if (!in_array($this->shipping_method_id, $shipping_methods_with_expiration_date)) return;

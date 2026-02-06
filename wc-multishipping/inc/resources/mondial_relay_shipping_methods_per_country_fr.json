@@ -4,6 +4,7 @@
         "countries": {
             "FR": {
                 "mondial_relay_point_relais": true,
+                "mondial_relay_lockers": true,
                 "mondial_relay_domicile_1_livreur": true,
                 "mondial_relay_domicile_2_livreurs": true,
                 "mondial_relay_domicile_inf_30": true,
@@ -16,6 +17,7 @@
         "countries": {
             "BE": {
                 "mondial_relay_point_relais": true,
+                "mondial_relay_lockers": true,
                 "mondial_relay_domicile_1_livreur": false,
                 "mondial_relay_domicile_2_livreurs": false,
                 "mondial_relay_domicile_inf_30": true,
@@ -23,6 +25,7 @@
             },
             "DE": {
                 "mondial_relay_point_relais": true,
+                "mondial_relay_lockers": true,
                 "mondial_relay_domicile_1_livreur": false,
                 "mondial_relay_domicile_2_livreurs": false,
                 "mondial_relay_domicile_inf_30": true,
@@ -30,6 +33,7 @@
             },
             "LU": {
                 "mondial_relay_point_relais": true,
+                "mondial_relay_lockers": true,
                 "mondial_relay_domicile_1_livreur": false,
                 "mondial_relay_domicile_2_livreurs": false,
                 "mondial_relay_domicile_inf_30": true,
@@ -37,6 +41,7 @@
             },
             "NL": {
                 "mondial_relay_point_relais": true,
+                "mondial_relay_lockers": true,
                 "mondial_relay_domicile_1_livreur": false,
                 "mondial_relay_domicile_2_livreurs": false,
                 "mondial_relay_domicile_inf_30": true,
@@ -55,6 +60,7 @@
             "DK": {},
             "ES": {
                 "mondial_relay_point_relais": true,
+                "mondial_relay_lockers": true,
                 "mondial_relay_domicile_1_livreur": false,
                 "mondial_relay_domicile_2_livreurs": false,
                 "mondial_relay_domicile_inf_30": true,
@@ -66,12 +72,14 @@
             "IE": {},
             "IT": {
                 "mondial_relay_point_relais": true,
+                "mondial_relay_lockers": true,
                 "mondial_relay_domicile_1_livreur": false,
                 "mondial_relay_domicile_2_livreurs": false,
                 "mondial_relay_domicile_inf_30": true
             },
             "PT": {
                 "mondial_relay_point_relais": true,
+                "mondial_relay_lockers": true,
                 "mondial_relay_domicile_1_livreur": false,
                 "mondial_relay_domicile_2_livreurs": false,
                 "mondial_relay_domicile_inf_30": true

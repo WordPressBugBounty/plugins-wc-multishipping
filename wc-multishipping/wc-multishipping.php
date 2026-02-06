@@ -1,11 +1,13 @@
 <?php
 /*
-Plugin Name:Chronopost & Mondial relay pour WooCommerce - WCMultiShipping
+Plugin Name: WCMultiShipping — Mondial Relay, Inpost & Chronopost for WooCommerce
 Description: Create Chronopost & Mondial relay shipping labels and send them easily.
-Version: 2.5.8
+Version: 3.0.2
 Author: Mondial Relay WooCommerce - WCMultiShipping
 Author URI: https://www.wcmultishipping.com/fr/mondial-relay-woocommerce/
-License: GPLv2
+Requires Plugins: woocommerce
+License: GPLv3
+License URI: https://www.gnu.org/licenses/gpl-3.0.html
 Text Domain: wc-multishipping
 Domain Path: /languages
 */
@@ -74,19 +76,28 @@ add_action( 'enqueue_block_assets', function () {
 		return;
 	}
 
+	// Use the centralized asset manager
+	$asset_manager = \WCMultiShipping\inc\helpers\classes\wms_asset_manager::get_instance();
+	$asset_manager->register_pickup_scripts();
 
 	$shipping_providers = [ "chronopost", "mondial_relay", "ups" ];
+	$providers_config = [];
 	$google_maps_is_used = $mondial_relay_map_is_used = $open_street_maps_is_used = false;
 
 	foreach ( $shipping_providers as $one_shipping_provider ) {
-		if ( "google_maps" == get_option( 'wms_' . $one_shipping_provider . '_section_pickup_points_map_type', 'openstreetmap' ) && $google_maps_is_used == false ) {
+		$map_type = get_option( 'wms_' . $one_shipping_provider . '_section_pickup_points_map_type', 'openstreetmap' );
+		
+		if ( "google_maps" == $map_type && $google_maps_is_used == false ) {
 			$google_maps_is_used = true;
 			$google_maps_api_key = get_option( 'wms_' . $one_shipping_provider . '_section_pickup_points_google_maps_api_key' );
-		}
-		if ( "mondial_relay_map" == get_option( 'wms_' . $one_shipping_provider . '_section_pickup_points_map_type', 'openstreetmap' ) )
+			$providers_config[ $one_shipping_provider ] = 'google_maps';
+		} elseif ( "mondial_relay_map" == $map_type ) {
 			$mondial_relay_map_is_used = true;
-		if ( "openstreetmap" == get_option( 'wms_' . $one_shipping_provider . '_section_pickup_points_map_type', 'openstreetmap' ) )
+			$providers_config[ $one_shipping_provider ] = 'mondial_relay_map';
+		} elseif ( "openstreetmap" == $map_type ) {
 			$open_street_maps_is_used = true;
+			$providers_config[ $one_shipping_provider ] = 'openstreetmap';
+		}
 	}
 
 	//Load Country listing (displayed in the modals)
@@ -99,59 +110,24 @@ add_action( 'enqueue_block_assets', function () {
 	if ( ! has_block( "woocommerce/checkout", $post->post_content ) && ! is_checkout() )
 		return;
 
-	// Initialize WMS global object with shared variables
-	$wms_shared_data = array(
-		'ajaxurl' => admin_url( 'admin-ajax.php' ),
-		'maps' => array(
-			'markers' => array(),
-			'instance' => null,
-			'google' => null
-		),
-		'ui' => array(
-			'modal' => null,
-			'loader' => null,
-			'listingContainer' => null
-		)
-	);
+	// Use the asset manager to enqueue all necessary scripts
+	$asset_manager->enqueue_pickup_scripts( $providers_config );
 
-	// Enqueue wp-i18n script
-	wp_enqueue_script( 'wp-i18n' );
-
-	// Enqueue the global configuration script
-	wp_enqueue_script( 'wms_globals', WMS_FRONT_JS_URL . 'pickups' . DS . 'wms-globals.js', [ 'wp-i18n', 'jquery' ], '1.0', true );
-
-	// Localize the script with our data
-	wp_localize_script( 'wms_globals', 'WMS', $wms_shared_data );
-
-	//Includes the modals
-
+	// Include modals
 	if ( $google_maps_is_used ) {
-		include WMS_FRONT_PARTIALS . 'pickups' . DS . 'google_maps' . DS . 'modal.php';
-		wp_enqueue_script( 'wms_pickup_modal_google_maps', WMS_FRONT_JS_URL . 'pickups/google_maps/google_maps_pickup_widget.js?time=' . time(), [ 'jquery', 'wms_globals' ], '', true );
-		wp_set_script_translations( 'wms_pickup_modal_google_maps', 'wc-multishipping' );
-		wp_enqueue_script( 'google', 'https://maps.googleapis.com/maps/api/js?key=' . $google_maps_api_key . '&v=quarterly', [], '', true );
+		include WMS_SHARED_PARTIALS . 'pickups' . DS . 'google_maps' . DS . 'modal.php';
 	}
 
 	if ( $mondial_relay_map_is_used ) {
-		include WMS_FRONT_PARTIALS . 'pickups' . DS . 'mondial_relay' . DS . 'modal.php';
-		wp_enqueue_script( 'mondialrelay-leaflet-maps', '//unpkg.com/leaflet/dist/leaflet.js', [], '', true );
-		wp_enqueue_script( 'mondialrelay-parcelshoppicker', 'https://widget.mondialrelay.com/parcelshop-picker/jquery.plugin.mondialrelay.parcelshoppicker.js', [], '', true );
-		wp_enqueue_script( 'wms_pickup_modal_mondial_relay', WMS_FRONT_JS_URL . 'pickups/mondial_relay/mondial_relay_pickup_widget.js?time=' . time(), [ 'jquery', 'wms_globals' ], '', true );
+		include WMS_SHARED_PARTIALS . 'pickups' . DS . 'mondial_relay' . DS . 'modal.php';
 	}
 
 	if ( $open_street_maps_is_used ) {
-		include WMS_FRONT_PARTIALS . 'pickups' . DS . 'openstreetmap' . DS . 'modal.php';
-		wp_enqueue_script( 'openstreetmap-leaflet-maps', '//unpkg.com/leaflet/dist/leaflet.js', [], '', true );
-		wp_enqueue_script( 'wms_pickup_modal_openstreetmap', WMS_FRONT_JS_URL . 'pickups/openstreetmap/openstreetmap_pickup_widget.js?time=' . time(), [ 'jquery', 'wms_globals' ], '1.0', true );
-		wp_set_script_translations( 'wms_pickup_modal_openstreetmap', 'wc-multishipping' );
+		include WMS_SHARED_PARTIALS . 'pickups' . DS . 'openstreetmap' . DS . 'modal.php';
 	}
 
-	//Adding the modal scripts
-	wp_enqueue_style( 'wms_pickup_CSS', WMS_FRONT_CSS_URL . 'pickups/wooshippping_pickup_widget.min.css?time=' . time() );
-
-	wp_enqueue_script( 'wms_pickup_modal_woocommerce_block', WMS_FRONT_JS_URL . 'pickups/woocommerce_blocks/wms_pickup_selection_button.js?time=' . time(), [ 'jquery', 'wms_globals' ], '1.0' );
-
-	wp_enqueue_script( 'backbone-modal', WMS_PLUGINS_URL . '/woocommerce/assets/js/admin/backbone-modal.js', [ 'jquery', 'wp-util', 'backbone' ] );
+	// Enqueue CSS
+	wp_enqueue_style( 'wms_pickup_CSS', WMS_SHARED_CSS_URL . 'pickups/wooshippping_pickup_widget.min.css', [], \WCMultiShipping\inc\helpers\classes\wms_asset_manager::get_version() );
 } );
 
 
@@ -165,3 +141,13 @@ add_action( 'woocommerce_blocks_loaded', function () {
 		}
 	);
 } );
+
+//__START__free_
+/*
+ * Activation hook
+ */
+register_activation_hook( __FILE__, function() {
+	// Set transient to trigger redirect to welcome page
+	set_transient( 'wms_activation_redirect', true, 30 );
+} );
+//__END__free_

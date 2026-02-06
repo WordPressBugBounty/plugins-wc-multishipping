@@ -18,6 +18,7 @@ class ups_helper extends abstract_helper
 
     public static function is_shipping_method_enabled()
     {
+        return false;
         return 'yes' === get_option('wms_ups_enable', 'yes');
     }
 

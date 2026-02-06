@@ -29,6 +29,8 @@ class mondial_relay_pickup_widget extends abstract_pickup_widget {
 		if ( static::SHIPPING_PROVIDER_ID !== $shipping_provider )
 			return;
 
+		$shipping_method_id = wms_get_var( 'cmd', 'shipping_method_id', '' );
+
 		$city = wms_get_var( 'string', 'city', '' );
 		$zip_code = wms_get_var( 'cmd', 'zipcode', '' );
 		$country = wms_get_var( 'cmd', 'country', 'FR' );
@@ -61,8 +63,10 @@ class mondial_relay_pickup_widget extends abstract_pickup_widget {
 			'Ville' => '',
 			'CP' => $zip_code,
 			'Poids' => '100',
+			"Action" => strpos($shipping_method_id, 'mondial_relay_lockers') !== false ? "APM" : "24R",
 			'NombreResultats' => $nb_pickups,
 		];
+
 
 		$code = implode( "", $params );
 		$code .= $private_key;
@@ -72,10 +76,14 @@ class mondial_relay_pickup_widget extends abstract_pickup_widget {
 		$result = $mondial_relay_api_helper->get_pickup_point( $params );
 
 		if ( '0' !== $result->STAT ) {
+			$error_message = ! empty( $result->error_message ) 
+				? $result->error_message 
+				: sprintf( __( 'Error: %s', 'wc-multishipping' ), wms_display_value( $mondial_relay_api_helper->get_error_message( $result->STAT ) ) );
+		
 			wp_send_json(
 				[ 
 					'error' => true,
-					'error_message' => sprintf( __( 'Error: %s', 'wc-multishipping' ), wms_display_value( $mondial_relay_api_helper->get_error_message( $result->STAT ) ) ),
+					'error_message' => $error_message,
 				]
 			);
 		}

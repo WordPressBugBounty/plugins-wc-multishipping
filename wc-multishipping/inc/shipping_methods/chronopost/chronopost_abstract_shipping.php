@@ -174,6 +174,7 @@ class chronopost_abstract_shipping extends abstract_shipping {
 				'password' => $account_password,
 				'depCode' => $departure_zip_code,
 				'arrCode' => $package['destination']['postcode'],
+				'arrCountryCode' => $package['destination']['country'],
 				'weight' => $total_weight,
 				'productCode' => $this->get_product_code(),
 				'type' => 'M',
@@ -200,7 +201,8 @@ class chronopost_abstract_shipping extends abstract_shipping {
 
 	public function calculate_shipping( $package = [] ) {
 		$cost = null;
-		$debug_mode = get_option( 'wms_chronopost_debug_mode' );
+		$debug_mode = get_option( 'wms_chronopost_debug_mode', true );
+		$is_admin = current_user_can( 'manage_woocommerce' );
 
 		if ( chronopost_shipping_methods::get_one_country_capabilities_info( $package['destination']['country'], $this->id ) ) {
 			$total_weight = floatval( $this->get_option( 'packaging_weight', 0 ) );
@@ -254,34 +256,16 @@ class chronopost_abstract_shipping extends abstract_shipping {
 				}
 
 				if ( empty( $matching_rates ) ) {
-					if ( $debug_mode ) {
-						add_action( 'woocommerce_before_checkout_form', function () {
-
-							$total_weight = floatval( $this->get_option( 'packaging_weight', 0 ) );
-							$woocommerce_weight_unit = get_option( 'woocommerce_weight_unit' );
-							if ( $woocommerce_weight_unit == 'g' && $total_weight > 0 )
-								$total_weight = $total_weight * 1000;
-
-							wc_print_notice(
-								sprintf(
-									__( 'No %s shipping method displayed: The current cart doesn\'t match any rates you\'ve set in the shipping method pricing configuration.', 'wc-multishipping' ),
-									'Chronopost'
-
-								),
-								'notice'
-							);
-							wc_print_notice(
-								sprintf(
-									__( 'Cart total amount: %1$s%2$s / Cart total weight: %3$s%4$s', 'wc-multishipping' ),
-									$total_weight + WC()->cart->cart_contents_total,
-									get_woocommerce_currency_symbol(),
-									WC()->cart->cart_contents_weight,
-									get_option( 'woocommerce_weight_unit' )
-								),
-								'notice'
-							);
-						}, 10 );
-					}
+					$this->add_debug_message( [
+						'debug_mode' => $debug_mode,
+						'is_admin' => $is_admin,
+						'total_weight' => $total_weight,
+						'total_price' => $total_price,
+						'pricing_condition' => $pricing_condition,
+						'rates' => $rates,
+						'reason' => 'no_matching_rates',
+						'carrier_name' => 'Chronopost'
+					] );
 					return;
 				}
 
@@ -301,25 +285,23 @@ class chronopost_abstract_shipping extends abstract_shipping {
 						$matching_rates_shipping_classes[ $one_shipping_class_id ] = array_filter(
 							$matching_rates, function ($rate) use ($one_shipping_class_id) {
 								return in_array( self::WMS_ALL_SHIPPING_CLASS_CODE, $rate['shipping_class'] );
-								;
 							}
 						);
 					}
 				}
 
 				if ( empty( $matching_rates_shipping_classes ) ) {
-					if ( $debug_mode ) {
-						add_action( 'woocommerce_before_checkout_form', function () {
-							wc_print_notice(
-								sprintf(
-									__( 'No %s shipping method displayed: The products in the cart does not belong to the shippings classes set in the shipping method pricing configuration.', 'wc-multishipping' ),
-									'Chronopost'
-
-								),
-								'notice'
-							);
-						}, 10 );
-					}
+					$this->add_debug_message( [
+						'debug_mode' => $debug_mode,
+						'is_admin' => $is_admin,
+						'total_weight' => $total_weight,
+						'total_price' => $total_price,
+						'pricing_condition' => $pricing_condition,
+						'cart_shipping_classes' => $cart_shipping_classes,
+						'rates' => $rates,
+						'reason' => 'no_matching_shipping_classes',
+						'carrier_name' => 'Chronopost'
+					] );
 					return;
 				}
 
@@ -359,4 +341,5 @@ class chronopost_abstract_shipping extends abstract_shipping {
 			}
 		}
 	}
+
 }

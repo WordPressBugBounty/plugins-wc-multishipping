@@ -77,7 +77,7 @@ class chronopost_pickup_widget extends abstract_pickup_widget
             wp_send_json(
                 [
                     'error' => true,
-                    'error_message' => sprintf(__('Error: %s', 'wc-multishipping'), wms_display_value($result->errorMessage)),
+                    'error_message' => wms_display_value($result->errorMessage),
                 ]
             );
         }

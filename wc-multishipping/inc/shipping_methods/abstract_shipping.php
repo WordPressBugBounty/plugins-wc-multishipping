@@ -184,6 +184,38 @@ abstract class abstract_shipping extends \WC_Shipping_Method {
 		return $this->get_option( 'shipping_rates', [] );
 	}
 
+	public function get_shipping_class_name( $shipping_class_id ) {
+		$term = get_term( $shipping_class_id, 'product_shipping_class' );
+		if ( ! is_wp_error( $term ) && ! empty( $term ) ) {
+			return $term->name;
+		}
+
+		return '';
+	}
+
+	protected function add_debug_message( $params ) {
+		if ( ! $params['debug_mode'] || ! $params['is_admin'] ) {
+			return;
+		}
+
+		$debug_data = [
+			'method_title' => $this->method_title,
+			'total_weight' => $params['total_weight'],
+			'total_price' => $params['total_price'],
+			'pricing_condition' => $params['pricing_condition'],
+			'weight_unit' => get_option( 'woocommerce_weight_unit' ),
+			'rates' => $params['rates'],
+			'reason' => $params['reason'],
+			'carrier_name' => $params['carrier_name']
+		];
+
+		if ( isset( $params['cart_shipping_classes'] ) ) {
+			$debug_data['cart_shipping_classes'] = $params['cart_shipping_classes'];
+		}
+
+		wms_add_shipping_debug_message( $debug_data );
+	}
+
 	public function get_pricing_condition() {
 		return $this->get_option( 'pricing_condition', '' );
 	}
@@ -195,7 +227,6 @@ abstract class abstract_shipping extends \WC_Shipping_Method {
 	public function get_return_product_code() {
 		return $this->return_product_code;
 	}
-
 
 	public function calculate_shipping( $package = [] ) {
 		$rate = [ 

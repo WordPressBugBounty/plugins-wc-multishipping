@@ -34,7 +34,7 @@ class ups_parcel extends abstract_parcel
     public static function register_parcels_from_order($order, $is_return_order = false)
     {
         if (empty($order)) {
-            wms_enqueue_message(__('Error while registering parcels for order => Order is empty.'), 'error');
+            wms_enqueue_message(__('Error while registering parcels for order => Order is empty.', 'wc-multishipping'), 'error');
 
             return false;
         }
@@ -74,7 +74,7 @@ class ups_parcel extends abstract_parcel
     public static function get_total_weight($order_items, $round = false)
     {
         if (empty($order_items)) {
-            wms_enqueue_message(__('Error while getting dimensions => No order items.'), 'error');
+            wms_enqueue_message(__('Error while getting dimensions => No order items.', 'wc-multishipping'), 'error');
 
             return false;
         }
@@ -107,7 +107,7 @@ class ups_parcel extends abstract_parcel
     public static function store_parcels_information($order, $api_result, $return = false)
     {
         if (empty($order) || empty($api_result) || empty($api_result->ShipmentDigest) || empty($api_result->ShipmentIdentificationNumber)) {
-            wms_enqueue_message(__('Error while storing information => Missing parameter.'), 'error');
+            wms_enqueue_message(__('Error while storing information => Missing parameter.', 'wc-multishipping'), 'error');
 
             return false;
         }
@@ -285,7 +285,7 @@ class ups_parcel extends abstract_parcel
     public static function get_tracking_numbers_from_order_ids($order_ids)
     {
         if (empty($order_ids)) {
-            wms_enqueue_message(__('Error while getting tracking numbers: No order(s) selected'), 'error');
+            wms_enqueue_message(__('Error while getting tracking numbers: No order(s) selected', 'wc-multishipping'), 'error');
 
             return false;
         }
@@ -319,7 +319,7 @@ class ups_parcel extends abstract_parcel
     public static function get_parcels_dimensions($order)
     {
         if (empty($order)) {
-            wms_enqueue_message(__('Error while getting dimensions => Order is empty.'), 'error');
+            wms_enqueue_message(__('Error while getting dimensions => Order is empty.', 'wc-multishipping'), 'error');
 
             return false;
         }

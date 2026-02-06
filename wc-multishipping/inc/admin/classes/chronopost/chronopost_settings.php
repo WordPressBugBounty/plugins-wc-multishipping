@@ -475,7 +475,7 @@ class chronopost_settings extends abstract_settings {
 			[ 
 				"id" => "wms_chronopost_debug_mode",
 				"title" => __( "Enable debug mode", "wc-multishipping" ),
-				"default" => "0",
+				"default" => "1",
 				"type" => "select",
 				"options" => [ "No", "Yes" ],
 			],

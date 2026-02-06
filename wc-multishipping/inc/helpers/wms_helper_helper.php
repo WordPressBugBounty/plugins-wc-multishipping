@@ -4,6 +4,7 @@ if (!defined('DS')) define('DS', DIRECTORY_SEPARATOR);
 
 define('WMS_COMPONENT', 'wc-multishipping');
 define('WMS_FOLDER', WP_PLUGIN_DIR.DS.WMS_COMPONENT.DS);
+define('WMS_VERSION', '3.0.0');
 define('WMS_WEBSITE', 'https://www.wcmultishipping.com/');
 
 define('WMS_INCLUDES', WMS_FOLDER.'inc'.DS);
@@ -24,6 +25,9 @@ define('WMS_FRONT', WMS_INCLUDES.'front'.DS);
 define('WMS_FRONT_PICKUP', WMS_FRONT.'pickup'.DS);
 define('WMS_FRONT_PARTIALS', WMS_FRONT.'partials'.DS);
 
+define('WMS_SHARED', WMS_INCLUDES.'shared'.DS);
+define('WMS_SHARED_PARTIALS', WMS_SHARED.'partials'.DS);
+
 define('WMS_SHIPPING_METHODS', WMS_INCLUDES.'shipping_methods'.DS);
 
 define('WMS_GLOBAL_HELPERS', WMS_INCLUDES.'helpers'.DS);
@@ -42,6 +46,10 @@ define('WMS_PLUGIN_URL', WMS_PLUGINS_URL.'/wc-multishipping/');
 define('WMS_FRONT_ASSETS_URL', WMS_PLUGINS_URL.'/'.WMS_COMPONENT.'/inc/front/assets/');
 define('WMS_FRONT_JS_URL', WMS_FRONT_ASSETS_URL.'js/');
 define('WMS_FRONT_CSS_URL', WMS_FRONT_ASSETS_URL.'css/');
+
+define('WMS_SHARED_ASSETS_URL', WMS_PLUGINS_URL.'/'.WMS_COMPONENT.'/inc/shared/assets/');
+define('WMS_SHARED_JS_URL', WMS_SHARED_ASSETS_URL.'js/');
+define('WMS_SHARED_CSS_URL', WMS_SHARED_ASSETS_URL.'css/');
 
 
 

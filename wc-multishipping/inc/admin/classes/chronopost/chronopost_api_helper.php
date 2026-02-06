@@ -24,13 +24,30 @@ class chronopost_api_helper {
 	public function get_pickup_point( $params ) {
 		$url = 'https://ws.chronopost.fr/recherchebt-ws-cxf/PointRelaisServiceWS?wsdl';
 
+		if ( ! extension_loaded( 'curl' ) ) {
+			$error_obj = new \stdClass();
+			$error_obj->errorCode = 999;
+			$error_obj->errorMessage = __( 'The CURL extension is not enabled on this server. Please contact your hosting provider to enable it. This extension is required to retrieve pickup points.', 'wc-multishipping' );
+			return $error_obj;
+		}
+
 		try {
 			$client = new SoapClient( $url );
 			$result = $client->recherchePointChronopostInterParService( $params );
 
 			return $result->return;
+		} catch (\SoapFault $e) {
+			wms_logger( sprintf( __( 'Chronopost SOAP Error: %s', 'wc-multishipping' ), $e->getMessage() ) );
+			$error_obj = new \stdClass();
+			$error_obj->errorCode = 999;
+			$error_obj->errorMessage = __( 'Unable to connect to Chronopost API. Please try again later.', 'wc-multishipping' );
+			return $error_obj;
 		} catch (\Exception $e) {
-			return false;
+			wms_logger( sprintf( __( 'Chronopost Error: %s', 'wc-multishipping' ), $e->getMessage() ) );
+			$error_obj = new \stdClass();
+			$error_obj->errorCode = 999;
+			$error_obj->errorMessage = __( 'An unexpected error occurred while retrieving pickup points.', 'wc-multishipping' );
+			return $error_obj;
 		}
 	}
 
@@ -131,7 +148,7 @@ class chronopost_api_helper {
 			$result = $client->cancelSkybill( $params );
 			if ( $result ) {
 				if ( $result->return->errorCode == 0 ) {
-					wms_enqueue_message( sprintf( __( 'The label %s was cancelled', 'chronopost-woocommerce-shipping' ), $params['skybillValue'] ), "success" );
+					wms_enqueue_message( sprintf( __( 'The label %s was cancelled', 'wc-multishipping' ), $params['skybillValue'] ), "success" );
 
 					return true;
 				} else {

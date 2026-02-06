@@ -31,6 +31,8 @@ abstract class abstract_pickup_widget {
 
 		add_action( 'wp_ajax_wms_select_pickup_point', [ $page, 'select_pickup_point' ] );
 		add_action( 'wp_ajax_nopriv_wms_select_pickup_point', [ $page, 'select_pickup_point' ] );
+		add_action( 'wp_ajax_wms_clear_pickup_point', [ $page, 'clear_pickup_point' ] );
+		add_action( 'wp_ajax_nopriv_wms_clear_pickup_point', [ $page, 'clear_pickup_point' ] );
 
 		add_filter( 'woocommerce_order_button_html', [ $page, 'prevent_place_order_button' ], 10, 2 );
 
@@ -76,18 +78,31 @@ abstract class abstract_pickup_widget {
 		$pickup_country = wms_get_var( 'cmd', 'pickup_country', 'FR' );
 		$pickup_provider = wms_get_var( 'cmd', 'pickup_provider', '' );
 
+		if( $pickup_provider != static::SHIPPING_PROVIDER_ID ) {
+			return;
+		}
 
 		if ( strlen( 4 == $pickup_zip_code ) )
 			$pickup_country = "0" . strval( $pickup_zip_code );
 
+		$shipping_method_name   = '';
+		$chosen_shipping_methods = WC()->session ? WC()->session->get( 'chosen_shipping_methods' ) : [];
+		if ( ! empty( $chosen_shipping_methods ) && is_array( $chosen_shipping_methods ) ) {
+			$selected_shipping_method_value = reset( $chosen_shipping_methods );
+			if ( ! empty( $selected_shipping_method_value ) ) {
+				$shipping_method_name = explode( ":", $selected_shipping_method_value )[0];
+			}
+		}
+
 		$pickup_info = [ 
-			'pickup_id' => $pickup_id,
-			'pickup_name' => $pickup_name,
-			'pickup_address' => $pickup_address,
-			'pickup_city' => $pickup_city,
-			'pickup_zipcode' => $pickup_zip_code,
-			'pickup_country' => $pickup_country,
-			'pickup_provider' => $pickup_provider
+			'pickup_id'       => $pickup_id,
+			'pickup_name'     => $pickup_name,
+			'pickup_address'  => $pickup_address,
+			'pickup_city'     => $pickup_city,
+			'pickup_zipcode'  => $pickup_zip_code,
+			'pickup_country'  => $pickup_country,
+			'pickup_provider' => $pickup_provider,
+			'shipping_method' => $shipping_method_name,
 		];
 
 		if ( empty( $pickup_id ) || empty( $pickup_name ) || empty( $pickup_address ) || empty( $pickup_city ) || empty( $pickup_zip_code ) || empty( $pickup_country ) ) {
@@ -97,9 +112,31 @@ abstract class abstract_pickup_widget {
 			] );
 		}
 
-		WC()->session->set( self::PICKUP_LOCATION_SESSION_VAR_NAME, $pickup_info );
+		WC()->session->set( static::PICKUP_LOCATION_SESSION_VAR_NAME, $pickup_info );
 
 		wp_send_json( [ 
+			'error' => false,
+			'error_message' => '',
+		] );
+	}
+
+	public function clear_pickup_point() {
+
+		if ( 1 !== wp_verify_nonce( wms_get_var( 'cmd', 'wms_nonce', '' ), 'wms_pickup_selection' ) )
+			wp_die( 'Invalid nonce' );
+
+		$pickup_provider = wms_get_var( 'cmd', 'pickup_provider', '' );
+
+		if ( empty( $pickup_provider ) || $pickup_provider !== static::SHIPPING_PROVIDER_ID ) {
+			return;
+		}
+
+		$session = WC()->session;
+		if ( $session ) {
+			$session->set( static::PICKUP_LOCATION_SESSION_VAR_NAME, null );
+		}
+
+		wp_send_json( [
 			'error' => false,
 			'error_message' => '',
 		] );
@@ -132,25 +169,25 @@ abstract class abstract_pickup_widget {
 		$countries_obj = new \WC_Countries();
 		$countries = $countries_obj->__get( 'countries' );
 
-		$pickup_info = WC()->session->get( self::PICKUP_LOCATION_SESSION_VAR_NAME );
+		$pickup_info = WC()->session->get( static::PICKUP_LOCATION_SESSION_VAR_NAME );
 
 		$map_to_use = get_option( 'wms_' . static::SHIPPING_PROVIDER_ID . '_section_pickup_points_map_type', 'openstreetmap' );
 
 		if ( 'mondial_relay_map' == $map_to_use && static::SHIPPING_PROVIDER_ID == 'mondial_relay' ) {
 
 			$modal_id = 'wms_pickup_open_modal_mondial_relay';
-			include WMS_FRONT_PARTIALS . 'pickups' . DS . 'mondial_relay' . DS . 'widget.php';
+			include WMS_SHARED_PARTIALS . 'pickups' . DS . 'mondial_relay' . DS . 'widget.php';
 		} else if ( 'openstreetmap' == $map_to_use ) {
 
 			$modal_id = 'wms_pickup_open_modal_openstreetmap';
-			include WMS_FRONT_PARTIALS . 'pickups' . DS . 'openstreetmap' . DS . 'widget.php';
+			include WMS_SHARED_PARTIALS . 'pickups' . DS . 'openstreetmap' . DS . 'widget.php';
 		} else {
 
 			$google_maps_api_key = get_option( 'wms_' . static::SHIPPING_PROVIDER_ID . '_section_pickup_points_google_maps_api_key' );
 			if ( ! empty( $google_maps_api_key ) ) {
 
 				$modal_id = 'wms_pickup_open_modal_google_maps';
-				include WMS_FRONT_PARTIALS . 'pickups' . DS . 'google_maps' . DS . 'widget.php';
+				include WMS_SHARED_PARTIALS . 'pickups' . DS . 'google_maps' . DS . 'widget.php';
 			} else {
 				if ( current_user_can( 'administrator' ) ) {
 					echo '<div id="wms_google_maps_issue">' . sprintf( __( 'Can\'t display the pick up selection button. No Google Maps Api Key set in your %s plugin configuration.', 'wc-multishipping' ), static::SHIPPING_PROVIDER_NAME ) . '</div>';
@@ -180,8 +217,10 @@ abstract class abstract_pickup_widget {
 		if ( ! $session )
 			return;
 
-		$pickup_info = $session->get( self::PICKUP_LOCATION_SESSION_VAR_NAME );
+		$pickup_info = $session->get( static::PICKUP_LOCATION_SESSION_VAR_NAME );
 		if ( empty( $pickup_info ) )
+			return;
+		if ( isset( $pickup_info['shipping_method'] ) && $pickup_info['shipping_method'] !== $method_id )
 			return;
 
 		array_walk(
@@ -194,27 +233,48 @@ abstract class abstract_pickup_widget {
 		$order->update_meta_data( $order_class::PICKUP_INFO_META_KEY, $pickup_info );
 		$order->save();
 
-		WC()->session->set( self::PICKUP_LOCATION_SESSION_VAR_NAME, null );
+		if($order->status == 'processing') {
+			WC()->session->set( static::PICKUP_LOCATION_SESSION_VAR_NAME, null );
+		}
 	}
 
 	public function prevent_place_order_button( $order_button ) {
 		$order_class = static::get_order_class();
 
-		if ( ! WC()->cart->needs_shipping() )
-			return $order_button;
-
-		$selected_shipping_method = WC()->session->get( 'chosen_shipping_methods' );
-		if ( empty( $selected_shipping_method ) || ! is_array( $selected_shipping_method ) )
-			return $order_button;
-
-		$method_id = substr( reset( $selected_shipping_method ), 0, strpos( reset( $selected_shipping_method ), ':' ) );
-		if ( empty( $selected_shipping_method ) || ! in_array( $method_id, $order_class::ID_SHIPPING_METHODS_RELAY ) ) {
+		if ( ! WC()->cart->needs_shipping() ) {
 			return $order_button;
 		}
 
-		$pickup_info = WC()->session->get( self::PICKUP_LOCATION_SESSION_VAR_NAME );
-		if ( ! empty( $pickup_info ) )
+		$selected_shipping_method = WC()->session->get( 'chosen_shipping_methods' );
+		if ( empty( $selected_shipping_method ) || ! is_array( $selected_shipping_method ) ) {
 			return $order_button;
+		}
+
+		$selected_shipping_method_value = reset( $selected_shipping_method );
+		$method_id = '';
+		if ( false !== strpos( $selected_shipping_method_value, ':' ) ) {
+			$method_id = substr( $selected_shipping_method_value, 0, strpos( $selected_shipping_method_value, ':' ) );
+		}
+
+		if ( empty( $method_id ) || ! in_array( $method_id, $order_class::ID_SHIPPING_METHODS_RELAY ) ) {
+			return $order_button;
+		}
+
+		$pickup_info     = WC()->session->get( static::PICKUP_LOCATION_SESSION_VAR_NAME );
+		$has_valid_pickup = ! empty( $pickup_info );
+		if ( $has_valid_pickup && isset( $pickup_info['shipping_method'] ) ) {
+			if ( $pickup_info['shipping_method'] !== $method_id ) {
+				$has_valid_pickup = false;
+			}
+		} elseif ( $has_valid_pickup && ! isset( $pickup_info['shipping_method'] ) ) {
+			if ( strpos( $method_id, $pickup_info['pickup_provider'] ) === false ) {
+				$has_valid_pickup = false;
+			}
+		}
+
+		if ( $has_valid_pickup ) {
+			return $order_button;
+		}
 
 		$textButton = esc_html__( 'Please select a pick-up point', 'wc-multishipping' );
 
@@ -222,31 +282,42 @@ abstract class abstract_pickup_widget {
 	}
 
 	public function prevent_checkout_process( $fields = [], $errors = null ) {
-
-		if ( ! WC()->cart->needs_shipping() )
+	
+		if ( ! WC()->cart->needs_shipping() ) {
 			return;
-
+		}
 
 		$selected_shipping_method = WC()->session->get( 'chosen_shipping_methods' );
-		if ( empty( $selected_shipping_method ) || ! is_array( $selected_shipping_method ) )
+		if ( empty( $selected_shipping_method ) || ! is_array( $selected_shipping_method ) ) {
 			return;
-
+		}
 
 		$selected_shipping_method_value = reset( $selected_shipping_method );
-		$selected_shipping_method_name = explode( ":", $selected_shipping_method_value )[0];
+		$selected_shipping_method_name = explode( ':', $selected_shipping_method_value )[0];
 
 		$order_class = static::get_order_class();
-		if ( empty( $selected_shipping_method ) || ! in_array( $selected_shipping_method_name, $order_class::ID_SHIPPING_METHODS_RELAY ) )
+		if ( empty( $selected_shipping_method_name ) || ! in_array( $selected_shipping_method_name, $order_class::ID_SHIPPING_METHODS_RELAY ) ) {
 			return;
+		}
 
+		$pickup_info      = WC()->session->get( static::PICKUP_LOCATION_SESSION_VAR_NAME );
+		$has_valid_pickup = ! empty( $pickup_info );
+		if ( $has_valid_pickup && isset( $pickup_info['shipping_method'] ) ) {
+			if ( $pickup_info['shipping_method'] !== $selected_shipping_method_name ) {
+				$has_valid_pickup = false;
+			}
+		} elseif ( $has_valid_pickup && ! isset( $pickup_info['shipping_method'] ) ) {
+			if ( strpos( $selected_shipping_method_name, $pickup_info['pickup_provider'] ) === false ) {
+				$has_valid_pickup = false;
+			}
+		}
 
-		$pickup_info = WC()->session->get( self::PICKUP_LOCATION_SESSION_VAR_NAME );
-
-		if ( empty( $pickup_info ) || strpos( $selected_shipping_method_name, $pickup_info['pickup_provider'] ) === false ) {
-			if ( $errors )
+		if ( ! $has_valid_pickup ) {
+			if ( $errors ) {
 				$errors->add( 'validation', esc_html__( 'Please select a pick-up point', 'wc-multishipping' ) );
-			else
+			} else {
 				throw new \Exception( esc_html__( 'Please select a pick-up point', 'wc-multishipping' ) );
+			}
 		}
 	}
 
@@ -257,7 +328,7 @@ abstract class abstract_pickup_widget {
 			return;
 
 
-		$pickup_data = WC()->session->get( self::PICKUP_LOCATION_SESSION_VAR_NAME );
+		$pickup_data = WC()->session->get( static::PICKUP_LOCATION_SESSION_VAR_NAME );
 
 		$order->set_shipping_company( $pickup_data['pickup_name'] );
 		$order->set_shipping_address_1( $pickup_data['pickup_address'] );
@@ -273,7 +344,7 @@ abstract class abstract_pickup_widget {
 		$order_class = static::get_order_class();
 
 		register_post_status( $order_class::WC_WMS_TRANSIT, [ 
-			'label' => __( $order_class::WC_WMS_TRANSIT_LABEL, 'wc-multishipping' ),
+			'label' => $order_class::WC_WMS_TRANSIT_LABEL,
 			'public' => true,
 			'show_in_admin_status_list' => true,
 			'show_in_admin_all_list' => true,
@@ -285,37 +356,38 @@ abstract class abstract_pickup_widget {
 			),
 		] );
 		register_post_status( $order_class::WC_WMS_DELIVERED, [ 
-			'label' => __( $order_class::WC_WMS_DELIVERED_LABEL, 'wc-multishipping' ),
+			'label' => $order_class::WC_WMS_DELIVERED_LABEL,
 			'public' => true,
 			'show_in_admin_status_list' => true,
 			'show_in_admin_all_list' => true,
 			'exclude_from_search' => false,
 			'label_count' => _n_noop(
-				'Delivered <span class="count">(%s)</span>',
-				'Delivered <span class="count">(%s)</span>',
+				$order_class::WC_WMS_DELIVERED_LABEL . ' <span class="count">(%s)</span>',
+				$order_class::WC_WMS_DELIVERED_LABEL . ' <span class="count">(%s)</span>',
 				'wc-multishipping'
 			),
 		] );
 		register_post_status( $order_class::WC_WMS_ANOMALY, [ 
-			'label' => __( $order_class::WC_WMS_ANOMALY_LABEL, 'wc-multishipping' ),
+			'label' => $order_class::WC_WMS_ANOMALY_LABEL,
 			'public' => true,
 			'show_in_admin_status_list' => true,
 			'show_in_admin_all_list' => true,
 			'exclude_from_search' => false,
 			'label_count' => _n_noop(
-				'Anomaly <span class="count">(%s)</span>',
-				'Anomaly <span class="count">(%s)</span>',
+				$order_class::WC_WMS_ANOMALY_LABEL . ' <span class="count">(%s)</span>',
+				$order_class::WC_WMS_ANOMALY_LABEL . ' <span class="count">(%s)</span>',
 				'wc-multishipping'
 			),
 		] );
 		register_post_status( $order_class::WC_WMS_READY_TO_SHIP, [ 
-			'label' => __( $order_class::WC_WMS_READY_TO_SHIP_LABEL, 'wc-multishipping' ),
+			'label' => $order_class::WC_WMS_READY_TO_SHIP_LABEL,
 			'public' => true,
 			'show_in_admin_status_list' => true,
 			'show_in_admin_all_list' => true,
 			'exclude_from_search' => false,
 			'label_count' => _n_noop(
-				'Ready to ship <span class="count">(%s)</span>',
+				$order_class::WC_WMS_READY_TO_SHIP_LABEL . ' <span class="count">(%s)</span>',
+				$order_class::WC_WMS_READY_TO_SHIP_LABEL . ' <span class="count">(%s)</span>',
 				'Ready to ship <span class="count">(%s)</span>',
 				'wc-multishipping'
 			),

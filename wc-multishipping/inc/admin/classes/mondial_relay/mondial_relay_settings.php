@@ -116,7 +116,7 @@ class mondial_relay_settings extends abstract_settings {
 
 				"title" => __( "Display pickup points map via  (Pro Version only)", "wc-multishipping" ),
 				"class" => "",
-				"default" => "openstreetmap",
+				"default" => "mondial_relay_map",
 				"options" => [ 
 					"openstreetmap" => "OpenStreetMap",
 					"google_maps" => "Google Maps",
@@ -355,7 +355,7 @@ class mondial_relay_settings extends abstract_settings {
 			[ 
 				"id" => "wms_mondial_relay_debug_mode",
 				"title" => __( "Enable debug mode", "wc-multishipping" ),
-				"default" => "0",
+				"default" => "1",
 				"type" => "select",
 				"options" => [ "No", "Yes" ],
 			],
@@ -415,9 +415,12 @@ class mondial_relay_settings extends abstract_settings {
 				'error' => false,
 			];
 		} else {
+			$error_message = ! empty( $data->error_message ) 
+				? $data->error_message 
+				: $mondial_relay_api_helper->get_error_message( $data->STAT );
 
 			$response = [ 
-				'message' => sprintf( __( 'Error with Mondial Relay API: %s', 'wc-multishipping' ), $mondial_relay_api_helper->get_error_message( $data->STAT ) ),
+				'message' => sprintf( __( 'Error with Mondial Relay API: %s', 'wc-multishipping' ), $error_message ),
 				'error' => true,
 			];
 		}

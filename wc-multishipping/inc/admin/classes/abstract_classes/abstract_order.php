@@ -430,9 +430,12 @@ abstract class abstract_order {
 
 	public static function get_tracking_numbers_from_order( $order_id, $is_return_order = false ) {
 		if ( empty( $order_id ) )
-			return '';
+			return [];
 
 		$order = wc_get_order( $order_id );
+		if ( empty( $order ) )
+			return [];
+		
 		$shipment_data = $order->get_meta( '_wms_' . static::SHIPPING_PROVIDER_ID . '_shipment_data', true );
 		if ( empty( $shipment_data ) || empty( $shipment_data['_wms_outward_parcels']['_wms_parcels'] ) )
 			return false;
