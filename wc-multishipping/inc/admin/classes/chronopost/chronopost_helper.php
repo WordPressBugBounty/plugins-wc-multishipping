@@ -10,6 +10,13 @@ class chronopost_helper extends abstract_helper {
 	const SHIPPING_PROVIDER_DISPLAYED_NAME = 'Chronopost';
 	const SHIPPING_PROVIDER_ID = 'chronopost';
 
+	public static function register_hooks() {
+		parent::register_hooks();
+
+		add_action( 'woocommerce_checkout_order_processed', [ __CLASS__, 'mark_order_for_pro_queries' ], 20, 1 );
+		add_action( 'woocommerce_store_api_checkout_order_processed', [ __CLASS__, 'mark_order_for_pro_queries' ], 40, 1 );
+	}
+
 	public function __construct() {
 		new chronopost_settings();
 	}
@@ -33,6 +40,28 @@ class chronopost_helper extends abstract_helper {
 
 	public static function update_wms_statuses() {
 		return;
+	}
+
+	public static function mark_order_for_pro_queries( $order_id ) {
+		if ( is_object( $order_id ) && method_exists( $order_id, 'get_id' ) ) {
+			$order_id = $order_id->get_id();
+		}
+
+		if ( empty( $order_id ) ) {
+			return;
+		}
+
+		chronopost_order::sync_chronopost_order_flag( (int) $order_id );
+	}
+
+	public function save_admin_shipping_method_selection( $post_id ) {
+		parent::save_admin_shipping_method_selection( $post_id );
+
+		if ( empty( $post_id ) ) {
+			return;
+		}
+
+		chronopost_order::sync_chronopost_order_flag( (int) $post_id );
 	}
 
 	public function generate_woocommerce_email( $emails ) {

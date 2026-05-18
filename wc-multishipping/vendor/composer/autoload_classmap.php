@@ -55,7 +55,6 @@ return array(
     'WCMultiShipping\\inc\\front\\pickup\\mondial_relay\\mondial_relay_pickup_widget' => $baseDir . '/inc/front/pickup/mondial_relay/mondial_relay_pickup_widget.php',
     'WCMultiShipping\\inc\\front\\pickup\\ups\\ups_pickup_widget' => $baseDir . '/inc/front/pickup/ups/ups_pickup_widget.php',
     'WCMultiShipping\\inc\\front\\wms_front_init' => $baseDir . '/inc/front/wms_front_init.php',
-    'WCMultiShipping\\inc\\helpers\\classes\\update_helper' => $baseDir . '/inc/helpers/classes/update_helper.php',
     'WCMultiShipping\\inc\\shipping_methods\\abstract_shipping' => $baseDir . '/inc/shipping_methods/abstract_shipping.php',
     'WCMultiShipping\\inc\\shipping_methods\\chronopost\\chronopost_10' => $baseDir . '/inc/shipping_methods/chronopost/chronopost_10.php',
     'WCMultiShipping\\inc\\shipping_methods\\chronopost\\chronopost_13' => $baseDir . '/inc/shipping_methods/chronopost/chronopost_13.php',

@@ -63,7 +63,7 @@ class mondial_relay_pickup_widget extends abstract_pickup_widget {
 			'Ville' => '',
 			'CP' => $zip_code,
 			'Poids' => '100',
-			"Action" => strpos($shipping_method_id, 'mondial_relay_lockers') !== false ? "APM" : "24R",
+			"Action" => strpos($shipping_method_id, 'mondial_relay_lockers') !== false ? "APM" : "MED",
 			'NombreResultats' => $nb_pickups,
 		];
 

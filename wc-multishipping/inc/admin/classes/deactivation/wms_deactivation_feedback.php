@@ -6,6 +6,17 @@ defined( 'ABSPATH' ) || die( 'Restricted Access' );
 
 class wms_deactivation_feedback {
 
+	protected static function get_allowed_reasons() {
+		return [
+			'no_longer_needed',
+			'found_better_plugin',
+			'not_working',
+			'broke_site',
+			'temporary',
+			'other',
+		];
+	}
+
 	public static function register_hooks() {
 		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_scripts' ] );
 		add_action( 'wp_ajax_wms_send_deactivation_feedback', [ __CLASS__, 'send_feedback' ] );
@@ -59,8 +70,17 @@ class wms_deactivation_feedback {
 	public static function send_feedback() {
 		check_ajax_referer( 'wms_deactivation_feedback', 'nonce' );
 
-		$reason = isset( $_POST['reason'] ) ? sanitize_text_field( $_POST['reason'] ) : '';
-		$details = isset( $_POST['details'] ) ? sanitize_textarea_field( $_POST['details'] ) : '';
+		$reason = isset( $_POST['reason'] ) ? sanitize_text_field( wp_unslash( $_POST['reason'] ) ) : '';
+		$details = isset( $_POST['details'] ) ? sanitize_textarea_field( wp_unslash( $_POST['details'] ) ) : '';
+
+		if ( ! in_array( $reason, self::get_allowed_reasons(), true ) ) {
+			wp_send_json_error(
+				[
+					'message' => esc_html__( 'Invalid feedback reason.', 'wc-multishipping' ),
+				],
+				400
+			);
+		}
 
 		$api_key = get_option( 'wms_api_key', '' );
 		$customer_email = get_option( 'wms_customer_email', '' );

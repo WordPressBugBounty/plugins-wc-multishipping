@@ -26,8 +26,21 @@ class wms_asset_manager {
 			return; // Already registered
 		}
 
-		wp_register_script( $handle, $src, $deps, self::$version, $in_footer );
+		wp_register_script( $handle, $src, $deps, $this->get_script_version( $src ), $in_footer );
 		self::$scripts_registered[ $handle ] = true;
+	}
+
+	private function get_script_version( $src ) {
+		if ( defined( 'WMS_SHARED_JS_URL' ) && defined( 'WMS_SHARED' ) && 0 === strpos( $src, WMS_SHARED_JS_URL ) ) {
+			$relative_path = substr( $src, strlen( WMS_SHARED_JS_URL ) );
+			$file_path     = WMS_SHARED . 'assets' . DS . 'js' . DS . str_replace( '/', DS, $relative_path );
+
+			if ( file_exists( $file_path ) ) {
+				return (string) filemtime( $file_path );
+			}
+		}
+
+		return self::$version;
 	}
 
 	public function enqueue_script( $handle, $src = '', $deps = [], $in_footer = true ) {

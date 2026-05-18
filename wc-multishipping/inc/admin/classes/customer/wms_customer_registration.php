@@ -60,15 +60,18 @@ class wms_customer_registration {
 		}
 
 		$email = isset( $_POST['wms_email'] ) ? sanitize_email( $_POST['wms_email'] ) : '';
-		if ( ! empty( $email ) && is_email( $email ) ) {
-			update_option( self::OPTION_CUSTOMER_EMAIL, $email );
-			
-			self::send_registration_to_api( $email );
+		if ( empty( $email ) || ! is_email( $email ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wc-multishipping&view=wizard&step=activation&email_required=1' ) );
+			exit;
 		}
+
+		update_option( self::OPTION_CUSTOMER_EMAIL, $email );
+
+		self::send_registration_to_api( $email );
 
 		update_option( self::OPTION_INSTALLATION_REGISTERED, true );
 
-		wp_safe_redirect( admin_url( 'admin.php?page=wc-multishipping' ) );
+		wp_safe_redirect( admin_url( 'admin.php?page=wc-multishipping&view=wizard&step=carriers' ) );
 		exit;
 	}
 

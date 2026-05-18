@@ -200,6 +200,7 @@ abstract class abstract_shipping extends \WC_Shipping_Method {
 
 		$debug_data = [
 			'method_title' => $this->method_title,
+			'instance_id' => $this->instance_id,
 			'total_weight' => $params['total_weight'],
 			'total_price' => $params['total_price'],
 			'pricing_condition' => $params['pricing_condition'],

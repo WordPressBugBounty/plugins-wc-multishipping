@@ -10,6 +10,7 @@ use WCMultiShipping\inc\admin\classes\mondial_relay\mondial_relay_helper;
 use WCMultiShipping\inc\admin\classes\chronopost\chronopost_helper;
 
 use WCMultiShipping\inc\admin\classes\config\config_class;
+use WCMultiShipping\inc\admin\classes\config\wms_onboarding;
 
 defined( 'ABSPATH' ) || die( 'Restricted Access' );
 
@@ -40,6 +41,7 @@ class wms_front_init {
 			wp_schedule_event( time(), 'hourly', 'check_wms_license' );
 
 		$this->register_woocommerce_emails();
+		wms_onboarding::register_front_hooks();
 	}
 
 	private function register_woocommerce_emails() {

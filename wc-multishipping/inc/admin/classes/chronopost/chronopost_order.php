@@ -10,6 +10,9 @@ class chronopost_order extends abstract_order {
 	const SHIPPING_PROVIDER_DISPLAYED_NAME = 'Chronopost';
 	const SHIPPING_PROVIDER_ID = 'chronopost';
 
+	const IS_CHRONOPOST_META_KEY = '_wms_is_chronopost';
+	const IS_CHRONOPOST_META_VALUE_TRUE = 'yes';
+
 	const PICKUP_INFO_META_KEY = '_wms_chronopost_pickup_info';
 
 	const WC_WMS_TRANSIT = 'wc-wms_cp_transit';
@@ -28,6 +31,7 @@ class chronopost_order extends abstract_order {
 		'chronopost_10' => 'Chronopost 10',
 		'chronopost_13' => 'Chronopost 13',
 		'chronopost_13_fresh' => 'Chronopost 13 Fresh',
+		'chronopost_13_instance_agence' => 'Chronopost 13 Instance Agence',
 		'chronopost_18' => 'Chronopost 18',
 		'chronopost_18_fresh' => 'Chronopost 18 Fresh',
 		'chronopost_18_freeze' => 'Chronopost 18 Freeze',
@@ -41,7 +45,8 @@ class chronopost_order extends abstract_order {
 		'chronopost_relais_dom' => 'Chronopost Relais DOM',
 		'chronopost_relais_europe' => 'Chronopost Relais Europe',
 		'chronopost_2shop' => 'Chronopost 2Shop',
-		'chronopost_sameday' => 'Chronopost Same Day',
+		'chronopost_2shop_europe' => 'Chronopost 2Shop Europe',
+		'chronopost_same_day' => 'Chronopost Same Day',
 	];
 
 	const ID_SHIPPING_METHODS_RELAY = [ 
@@ -109,6 +114,45 @@ class chronopost_order extends abstract_order {
 
 	public static function get_label_class() {
 		return new chronopost_label();
+	}
+
+	public static function order_uses_chronopost( $order ) {
+		$shipping_method = static::get_shipping_method_name( $order );
+
+		return ! empty( $shipping_method ) && array_key_exists( $shipping_method, static::AVAILABLE_SHIPPING_METHODS );
+	}
+
+	public static function sync_chronopost_order_flag( $order, $save = true ) {
+		if ( empty( $order ) ) {
+			return false;
+		}
+
+		if ( is_int( $order ) ) {
+			$order = wc_get_order( $order );
+		}
+
+		if ( ! $order ) {
+			return false;
+		}
+
+		$uses_chronopost = static::order_uses_chronopost( $order );
+		$current_flag    = $order->get_meta( static::IS_CHRONOPOST_META_KEY, true );
+
+		if ( $uses_chronopost ) {
+			if ( $current_flag !== static::IS_CHRONOPOST_META_VALUE_TRUE ) {
+				$order->update_meta_data( static::IS_CHRONOPOST_META_KEY, static::IS_CHRONOPOST_META_VALUE_TRUE );
+				if ( $save ) {
+					$order->save();
+				}
+			}
+		} elseif ( '' !== $current_flag ) {
+			$order->delete_meta_data( static::IS_CHRONOPOST_META_KEY );
+			if ( $save ) {
+				$order->save();
+			}
+		}
+
+		return $uses_chronopost;
 	}
 
 }

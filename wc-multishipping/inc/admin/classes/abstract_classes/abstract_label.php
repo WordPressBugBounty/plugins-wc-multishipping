@@ -182,7 +182,7 @@ END_SQL;
 		return true;
 	}
 
-	public function generate_labels_from_api( $api_parameter ) {
+	public function generate_labels_from_api( $api_parameter, ...$extra_parameters ) {
 		if ( empty( $api_parameter ) ) {
 			wms_enqueue_message( __( 'Error while generating label from API => Parameter is empty.' ), 'error' );
 
@@ -191,14 +191,14 @@ END_SQL;
 
 
 		$api_helper = static::get_api_helper();
-		$label = $api_helper->get_labels_from_api( $api_parameter );
+		$label = $api_helper->get_labels_from_api( $api_parameter, ...$extra_parameters );
 
 		if ( empty( $label ) || ! empty( $label->errorCode ) ) {
 
 			wms_logger( "Class: Label / Function: Generate_labels_from_tracking_number" );
 			wms_logger( "----- Details -----" );
-			wms_logger( sprintf( "API Parameter: %d", wms_display_value( $api_parameter ) ) );
-			wms_logger( sprintf( "return: %d", json_encode( $label ) ) );
+			wms_logger( sprintf( "API Parameter: %s", wms_display_value( $api_parameter ) ) );
+			wms_logger( sprintf( "return: %s", json_encode( $label ) ) );
 
 			wms_enqueue_message( __( 'Error while generating label from tracking number => API return is invalid.' ), 'error' );
 

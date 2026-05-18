@@ -92,6 +92,7 @@ function wms_display_shipping_debug_message( $debug_data ) {
 	$weight_unit = $debug_data['weight_unit'];
 	$rates = $debug_data['rates'];
 	$carrier_name = isset( $debug_data['carrier_name'] ) ? $debug_data['carrier_name'] : $method_title;
+	$instance_id = isset( $debug_data['instance_id'] ) ? absint( $debug_data['instance_id'] ) : 0;
 	
 	echo '<div style="display: flex; align-items: center; margin-bottom: 6px;">';
 	echo '<span style="font-size: 16px; margin-right: 6px;">⚠️</span>';
@@ -189,10 +190,15 @@ function wms_display_shipping_debug_message( $debug_data ) {
 		echo '</tbody></table>';
 		echo '</div>';
 	} else {
+		$shipping_settings_url = admin_url( 'admin.php?page=wc-settings&tab=shipping' );
+		if ( $instance_id > 0 ) {
+			$shipping_settings_url = add_query_arg( 'instance_id', $instance_id, $shipping_settings_url );
+		}
+
 		echo '<div style="background-color: #fff3cd; border: 1px solid #ffeeba; padding: 10px; border-radius: 4px; margin: 10px 0; color: #856404; font-size: 12px;">';
 		echo '<p style="margin: 0 0 5px 0;">' . __( 'No rates configured for this shipping method.', 'wc-multishipping' ) . '</p>';
 		echo '<p style="margin: 0 0 5px 0;">' . __( 'Please use the link below to configure your shipping rates. Don\'t forget to save the changes.', 'wc-multishipping' ) . '</p>';
-		echo '<p style="margin: 0;">' . sprintf(__( '<a href="%s" style="color: #856404; text-decoration: underline;">See the shipping method configuration page</a>', 'wc-multishipping'), admin_url( '/wp-admin/admin.php?page=wc-settings&tab=shipping&instance_id=' . $instance_id )) . '</p>';
+		echo '<p style="margin: 0;">' . sprintf(__( '<a href="%s" style="color: #856404; text-decoration: underline;">See the shipping method configuration page</a>', 'wc-multishipping' ), esc_url( $shipping_settings_url ) ) . '</p>';
 		echo '</div>';
 	}
 }

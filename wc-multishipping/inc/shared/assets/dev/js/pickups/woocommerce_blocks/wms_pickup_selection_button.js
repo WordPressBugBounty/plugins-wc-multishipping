@@ -56,6 +56,20 @@
     }
 
     /**
+     * Get selected shipping method ID from checkout
+     */
+    function getSelectedShippingMethod() {
+        let selected_shipping_method = document.getElementsByClassName('wc-block-components-shipping-rates-control__package')[0]?.getElementsByClassName('wc-block-components-radio-control__option-checked')[0]?.firstChild?.value;
+        if (selected_shipping_method) return selected_shipping_method;
+
+        const traditionalSelected =
+            document.querySelector('input[name^="shipping_method"]:checked') ||
+            document.querySelector('input[name^="shipping_method"][type="hidden"]');
+
+        return traditionalSelected?.value;
+    }
+
+    /**
      * Set up pickup modal based on selected shipping method
      */
     function set_wms_popup_class() {
@@ -64,7 +78,7 @@
 
     for (let wms_button of wms_buttons) {
 
-        let selected_shipping_method = document.getElementsByClassName('wc-block-components-shipping-rates-control__package')[0]?.getElementsByClassName('wc-block-components-radio-control__option-checked')[0]?.firstChild?.value;
+        let selected_shipping_method = getSelectedShippingMethod();
         if (undefined == selected_shipping_method) return;
 
 

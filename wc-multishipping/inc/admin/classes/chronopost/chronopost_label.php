@@ -274,9 +274,9 @@ class chronopost_label extends abstract_label {
 			$saturday_shipping = 0;
 		} else {
 			if ( $post_meta_shipping_on_saturday || ( $deliver_on_saturday && $is_sending_day ) ) {
-				if ( $shipping_method_id === 'chronorelaisdom' ) {
+				if ( $shipping_method_id === 'chronopost_relais_dom' ) {
 					$saturday_shipping = 368;
-				} elseif ( $shipping_method_id == 'chronosameday' ) {
+				} elseif ( $shipping_method_id == 'chronopost_same_day' ) {
 					$saturday_shipping = '974';
 				} else {
 					$saturday_shipping = 6;
@@ -285,7 +285,7 @@ class chronopost_label extends abstract_label {
 		}
 
 		$weight = chronopost_parcel::get_total_weight( $order->get_items() );
-		if ( $shipping_method_id == 'chronorelaiseurope' ) {
+		if ( $shipping_method_id == 'chronopost_relais_europe' ) {
 			$weight <= 3 ? $saturday_shipping = '337' : $saturday_shipping = '338';
 		}
 

@@ -19,6 +19,7 @@ class wms_orders_list_table extends \WP_List_Table {
 	const CHECKBOX_IDS = 'bulk-wms_cb_id';
 
 	public $helper_class;
+	protected $order_list_actions_displayed = false;
 
 	protected function column_default( $item, $column_name ) {
 		return $item[ $column_name ];
@@ -77,29 +78,124 @@ class wms_orders_list_table extends \WP_List_Table {
 		return '<a href="' . $orderUrl . '">' . $order_id . '</a>';
 	}
 
+	protected function get_orders_intro_text() {
+		return sprintf(
+			__( 'On this page you can see all confirmed orders using %s as shipping method. You can also create, print, and download your shipping labels.', 'wc-multishipping' ),
+			static::SHIPPING_PROVIDER_NAME
+		);
+	}
+
+	protected function has_external_label_management() {
+		return false;
+	}
+
+	protected function get_external_label_management_notice_title() {
+		return '';
+	}
+
+	protected function get_external_label_management_notice_text() {
+		return '';
+	}
+
+	protected function get_external_label_management_url() {
+		return '';
+	}
+
+	protected function get_external_label_management_button_label() {
+		return __( 'Open carrier shipping portal', 'wc-multishipping' );
+	}
+
+	protected function should_display_upgrade_action() {
+		return ! $this->has_valid_pro_license();
+	}
+
+	protected function has_valid_pro_license() {
+		$license = $this->get_pro_license_status();
+
+		return ! empty( $license->status );
+	}
+
+	protected function get_pro_license_status() {
+		$config_class = '\WCMultiShipping\inc\admin\classes\config\config_class';
+		$result = new \stdClass();
+		$result->status = false;
+		$result->message = '';
+
+		if ( ! class_exists( $config_class ) || ! method_exists( $config_class, 'is_license_valid' ) ) {
+			return $result;
+		}
+
+		return $config_class::is_license_valid();
+	}
+
+	protected function display_external_label_management_notice() {
+		if ( ! $this->has_external_label_management() ) {
+			return;
+		}
+
+		$notice_title = $this->get_external_label_management_notice_title();
+		$notice_text  = $this->get_external_label_management_notice_text();
+		$notice_url   = $this->get_external_label_management_url();
+
+		if ( '' === $notice_title && '' === $notice_text && '' === $notice_url ) {
+			return;
+		}
+
+		if ( '' === $notice_url ) {
+			return;
+		}
+		?>
+		<div style="display: inline-block;">
+			<a class="button button-primary" href="<?php echo esc_url( $notice_url ); ?>" target="_blank" rel="noopener noreferrer">
+				<?php echo esc_html( $this->get_external_label_management_button_label() ); ?>
+			</a>
+		</div>
+		<?php
+	}
+
+	protected function display_order_list_actions() {
+		if ( $this->order_list_actions_displayed ) {
+			return;
+		}
+
+		$this->order_list_actions_displayed = true;
+
+		echo '<div style="display: inline-block;">';
+		echo '<a href="' . admin_url( 'admin.php?page=wc-settings&tab=email' ) . '" target="_blank" class="button">' . esc_html__( 'Edit tracking notification email', 'wc-multishipping' ) . '</a>';
+		echo '</div>';
+		echo '<div style="display: inline-block;">';
+		echo '<a href="https://www.wcmultishipping.com/contact?utm_source=wms_plugin&utm_campaign=contact&utm_medium=wms_listing_button" target="_blank" class="button">' . esc_html__( 'Get help from support', 'wc-multishipping' ) . '</a>';
+		echo '</div>';
+		echo '<div style="display: inline-block;">';
+		echo '<a href="https://www.wcmultishipping.com/fr/docs?utm_source=wms_plugin&utm_campaign=check_doc&utm_medium=wms_listing_button" target="_blank" class="button">' . esc_html__( 'Check documentation', 'wc-multishipping' ) . '</a>';
+		echo '</div>';
+		if ( $this->should_display_upgrade_action() ) {
+			echo '<div style="display: inline-block;">';
+			echo '<a href="https://www.wcmultishipping.com/fr/tarifs?utm_source=wms_plugin&utm_campaign=go_pro&utm_medium=wms_listing_button" target="_blank" class="button">' . esc_html__( 'Upgrade to Pro version', 'wc-multishipping' ) . '</a>';
+			echo '</div>';
+		}
+	}
+
 	function display_table() {
-		wp_enqueue_script( 'wms_chronopost_settings', WMS_ADMIN_JS_URL . 'chronopost/chronopost_print_label.js?t=' . time(), [ 'jquery', 'wp-i18n' ] );
+		if ( ! $this->has_external_label_management() ) {
+			wp_enqueue_script( 'wms_chronopost_settings', WMS_ADMIN_JS_URL . 'chronopost/chronopost_print_label.js?t=' . time(), [ 'jquery', 'wp-i18n' ] );
+		}
 		?>
 
 		<div class="wrap">
 			<?php
 			$this->display_headers();
 			echo '<h1>' . sprintf( __( 'Your %s orders', 'wc-multishipping' ), static::SHIPPING_PROVIDER_NAME ) . '</h1>';
-			echo '<div style="font-weight: 600;margin: 1.33em 0;">' . sprintf( __( 'On this page you can see all the confirmed order using %s as shipping method. You can also create, print, download your shipping labels.', 'wc-multishipping' ), static::SHIPPING_PROVIDER_NAME ) . '</div>';
+			$orders_intro_text = $this->get_orders_intro_text();
+			if ( '' !== $orders_intro_text ) {
+				echo '<div style="font-weight: 600;margin: 1.33em 0;">' . esc_html( $orders_intro_text ) . '</div>';
+			}
 
 			wms_display_messages( true );
 
-			echo '<div style="margin-left: 15px; display:inline">';
-			echo '<a href="' . admin_url( 'admin.php?page=wc-settings&tab=email' ) . '" target="_blank" class="button">' . esc_html__( 'Edit tracking notification email', 'wc-multishipping' ) . '</a>';
-			echo '</div>';
-			echo '<div style="margin-left: 15px; display:inline"">';
-			echo '<a href="https://www.wcmultishipping.com/contact?utm_source=wms_plugin&utm_campaign=contact&utm_medium=wms_listing_button" target="_blank" class="button">' . esc_html__( 'Get help from support', 'wc-multishipping' ) . '</a>';
-			echo '</div>';
-			echo '<div style="margin-left: 15px; display:inline">';
-			echo '<a href="https://www.wcmultishipping.com/fr/docs?utm_source=wms_plugin&utm_campaign=check_doc&utm_medium=wms_listing_button" target="_blank" class="button">' . esc_html__( 'Check documentation', 'wc-multishipping' ) . '</a>';
-			echo '</div>';
-			echo '<div style="margin-left: 15px; display:inline">';
-			echo '<a href="https://www.wcmultishipping.com/fr/tarifs?utm_source=wms_plugin&utm_campaign=go_pro&utm_medium=wms_listing_button" target="_blank" class="button">' . esc_html__( 'Upgrade to Pro version', 'wc-multishipping' ) . '</a>';
+			echo '<div class="wms-orders-list-actions" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 22px 0 18px;">';
+			$this->display_external_label_management_notice();
+			$this->display_order_list_actions();
 			echo '</div>';
 			?>
 			<form method="post">
@@ -441,5 +537,3 @@ END_PRINT_SCRIPT;
 		wp_redirect( $label_class::get_url_for_delete_label( $tracking_numbers ) );
 	}
 }
-
-

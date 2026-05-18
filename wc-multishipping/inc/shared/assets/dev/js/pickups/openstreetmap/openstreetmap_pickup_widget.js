@@ -261,9 +261,11 @@
       return blockSelected;
     }
 
-    // Try traditional checkout
-    const traditionalSelected = document.querySelector('input[name^="shipping_method"]:checked');
-    if (traditionalSelected) {
+    // Try traditional checkout, including WooCommerce's single-method hidden input.
+    const traditionalSelected =
+      document.querySelector('input[name^="shipping_method"]:checked') ||
+      document.querySelector('input[name^="shipping_method"][type="hidden"]');
+    if (traditionalSelected?.value) {
       return traditionalSelected.value;
     }
 
@@ -718,19 +720,18 @@
       ".wms_pickup_modal_address_country_select select"
     );
 
-    // Only pre-fill city if zipcode is available
-    if (
-      zipcodeInput &&
-      userAddress.zipcode &&
-      userAddress.zipcode !== "75001"
-    ) {
+    // Pre-fill address fields (allow any value, including defaults)
+    if (zipcodeInput && userAddress.zipcode) {
       zipcodeInput.value = userAddress.zipcode;
-      if (cityInput && userAddress.city && userAddress.city !== "Paris") {
-        cityInput.value = userAddress.city;
-      }
     }
 
-    if (countrySelect) countrySelect.value = userAddress.country;
+    if (cityInput && userAddress.city) {
+      cityInput.value = userAddress.city;
+    }
+
+    if (countrySelect && userAddress.country) {
+      countrySelect.value = userAddress.country;
+    }
 
     // Setup search button
     const searchButton = state.modal.querySelector(

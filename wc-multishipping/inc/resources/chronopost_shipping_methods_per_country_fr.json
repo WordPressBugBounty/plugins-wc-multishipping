@@ -18,7 +18,8 @@
         "chronopost_relais": true,
         "chronopost_relais_europe": false,
         "chronopost_same_day": true,
-        "chronopost_relais_dom": false
+        "chronopost_relais_dom": false,
+        "chronopost_13_instance_agence": true
       }
     }
   },

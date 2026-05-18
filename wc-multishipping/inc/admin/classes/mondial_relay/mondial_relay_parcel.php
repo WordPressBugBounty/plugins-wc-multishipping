@@ -303,7 +303,7 @@ class mondial_relay_parcel extends abstract_parcel {
 			$labels_type => [ 
 				'_wms_shipping_provider_method_id' => $shipping_method_id,
 				'_wms_reservation_number' => $api_result->ExpeditionNum,
-				'_wms_label_URL' => $api_result->URL_Etiquette,
+				'_wms_label_URL' => mondial_relay_api_helper::format_label_url( $api_result->URL_Etiquette ),
 			],
 		];
 
@@ -351,7 +351,7 @@ class mondial_relay_parcel extends abstract_parcel {
 		}
 
 		$label_class = new mondial_relay_label();
-		$label = $label_class->generate_labels_from_api( $label_URL );
+		$label = $label_class->generate_labels_from_api( $label_URL, $reservation_number );
 		if ( empty( $label ) )
 			return false;
 

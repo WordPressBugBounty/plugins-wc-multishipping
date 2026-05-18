@@ -3,12 +3,14 @@
 namespace WCMultiShipping\inc\admin\partials\orders\chronopost;
 
 
+use WCMultiShipping\inc\admin\classes\chronopost\chronopost_connection_manager;
 use WCMultiShipping\inc\admin\partials\orders\abstract_classes\wms_orders_list_table;
 
 class chronopost_orders_list_table extends wms_orders_list_table
 {
 
     const SHIPPING_PROVIDER_NAME = 'Chronopost';
+    const CHRONOPOST_PRO_SHIPPING_URL = 'https://www.chronopost.fr/professionnel/#/expedier-colis';
 
     const BULK_ACTION_GENERATE_OUTWARD = 'bulk-label_generate_outward';
     const BULK_ACTION_GENERATE_INWARD = 'bulk-label_generate_inward';
@@ -19,10 +21,123 @@ class chronopost_orders_list_table extends wms_orders_list_table
     const CHECKBOX_IDS = 'bulk-wms_cb_id';
 
     public $helper_class;
+    private $chronopost_order_list_actions_displayed = false;
 
     protected function column_default($item, $column_name)
     {
         return $item[$column_name];
+    }
+
+    protected function is_chronopost_pro_external_label_mode()
+    {
+        return 'jwt' === chronopost_connection_manager::get_default_connection_type();
+    }
+
+    protected function get_orders_intro_text()
+    {
+        if ($this->is_chronopost_pro_external_label_mode()) {
+            return '';
+        }
+
+        return parent::get_orders_intro_text();
+    }
+
+    protected function has_external_label_management()
+    {
+        return $this->is_chronopost_pro_external_label_mode();
+    }
+
+    protected function display_order_list_actions()
+    {
+        if ($this->chronopost_order_list_actions_displayed) {
+            return;
+        }
+
+        $this->chronopost_order_list_actions_displayed = true;
+        parent::display_order_list_actions();
+
+        if ($this->is_chronopost_pro_external_label_mode()) {
+            $this->display_chronopost_pro_label_context();
+        }
+    }
+
+    protected function should_display_upgrade_action()
+    {
+        if ($this->is_chronopost_pro_external_label_mode()) {
+            return false;
+        }
+
+        return parent::should_display_upgrade_action();
+    }
+
+    protected function should_display_chronopost_pro_upgrade_action()
+    {
+        return parent::should_display_upgrade_action();
+    }
+
+    protected function display_chronopost_pro_label_context()
+    {
+        ?>
+        <div style="flex: 0 0 100%; min-width: 100%; width: 100%; box-sizing: border-box; margin: 0 0 10px; padding: 11px 14px; border-left: 4px solid #72aee6; background: #fff;">
+            <p style="margin: 0 0 8px;">
+                <strong><?php esc_html_e('Chronopost PRO workflow', 'wc-multishipping'); ?></strong><br>
+                <?php esc_html_e('Label creation is handled from your Chronopost account, not from WooCommerce.', 'wc-multishipping'); ?>
+            </p>
+            <?php
+            ?>
+            <?php if ($this->should_display_chronopost_pro_upgrade_action()) : ?>
+                <p style="margin: 0 0 10px;">
+                    <?php esc_html_e('WcMultiShipping Free can display Chronopost orders, but importing and synchronising orders from your shop with the Chronopost PRO workflow requires WcMultiShipping PRO.', 'wc-multishipping'); ?>
+                </p>
+                <a href="https://www.wcmultishipping.com/fr/tarifs?utm_source=wms_plugin&utm_campaign=go_pro&utm_medium=wms_chronopost_pro_orders" target="_blank" class="button button-primary" rel="noopener noreferrer">
+                    <?php esc_html_e('Get Pro version', 'wc-multishipping'); ?>
+                </a>
+            <?php endif; ?>
+            <?php
+            ?>
+        </div>
+        <?php
+    }
+
+	protected function display_external_label_management_notice()
+	{
+		if ($this->should_display_chronopost_pro_upgrade_action()) {
+			?>
+			<div style="display: inline-block;">
+				<span
+					class="button button-primary disabled"
+					aria-disabled="true"
+					style="pointer-events: none; cursor: default; opacity: .55;"
+				>
+					<?php echo esc_html($this->get_external_label_management_button_label()); ?>
+				</span>
+			</div>
+			<?php
+
+			return;
+		}
+
+		parent::display_external_label_management_notice();
+	}
+
+    protected function get_external_label_management_notice_title()
+    {
+        return __('Chronopost PRO label workflow is active', 'wc-multishipping');
+    }
+
+    protected function get_external_label_management_notice_text()
+    {
+        return __('With Chronopost PRO, shipping labels are generated from the Chronopost professional space. Use Chronopost to import your WooCommerce orders, then create, print, or download labels there.', 'wc-multishipping');
+    }
+
+    protected function get_external_label_management_url()
+    {
+        return self::CHRONOPOST_PRO_SHIPPING_URL;
+    }
+
+    protected function get_external_label_management_button_label()
+    {
+        return __('Generate shipping labels', 'wc-multishipping');
     }
 
     public function get_columns()
@@ -39,6 +154,10 @@ class chronopost_orders_list_table extends wms_orders_list_table
             'wms_shipping_status' => __('Actions', 'wc-multishipping'),
         ];
 
+        if ($this->is_chronopost_pro_external_label_mode()) {
+            unset($columns['cb'], $columns['wms_shipping_status']);
+        }
+
         return array_map(
             function ($v) {
                 return <<<END_HTML
@@ -51,6 +170,10 @@ END_HTML;
 
     public function get_bulk_actions()
     {
+        if ($this->is_chronopost_pro_external_label_mode()) {
+            return [];
+        }
+
         $actions = [
             self::BULK_ACTION_GENERATE_OUTWARD => __('Generate outward labels (Pro version only)', 'wc-multishipping'),
             self::BULK_ACTION_GENERATE_INWARD  => __('Generate inward labels (Pro version only)', 'wc-multishipping'),
@@ -66,6 +189,10 @@ END_HTML;
 
     public function process_bulk_action()
     {
+        if ($this->is_chronopost_pro_external_label_mode()) {
+            return;
+        }
+
         $wp_nonce = wms_get_var('cmd', '_wpnonce', '');
         $action = 'bulk-'.$this->_args['plural'];
         if (empty($wp_nonce) || !wp_verify_nonce($wp_nonce, $action)) return;
@@ -120,6 +247,10 @@ END_HTML;
             'wms_woo_status'      => ['wms_woo_status', false],
             'wms_shipping_status' => ['wms_shipping_status', false],
         ];
+
+        if ($this->is_chronopost_pro_external_label_mode()) {
+            unset($sortable_columns['wms_shipping_status']);
+        }
 
         return $sortable_columns;
     }
@@ -180,5 +311,3 @@ END_HTML;
     }
 
 }
-
-

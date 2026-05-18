@@ -28,8 +28,10 @@ function getSelectedShippingMethod() {
     }
 
     // Try traditional checkout
-    const traditionalSelected = document.querySelector('input[name^="shipping_method"]:checked');
-    if (traditionalSelected) {
+    const traditionalSelected =
+        document.querySelector('input[name^="shipping_method"]:checked') ||
+        document.querySelector('input[name^="shipping_method"][type="hidden"]');
+    if (traditionalSelected?.value) {
         return traditionalSelected.value;
     }
 
@@ -160,7 +162,7 @@ function init_mondial_relay_map() {
         PostCode: zipcode_to_display,
         Responsive: true,
         NbResults: 19,
-        ColLivMod: isMondialRelayLockers ? "APM" : "",
+        ColLivMod: isMondialRelayLockers ? "APM" : "MED",
         OnParcelShopSelected: function (data) {
             pickup_id = data.ID;
             pickup_name = data.Nom;

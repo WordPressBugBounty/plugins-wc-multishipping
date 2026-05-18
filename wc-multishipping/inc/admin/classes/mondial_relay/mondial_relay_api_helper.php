@@ -10,10 +10,119 @@ class mondial_relay_api_helper {
 	const TRACKING_API_KEY = "";
 
 	const API_URL = 'https://api.mondialrelay.com/Web_Services.asmx?wsdl';
+	const LABEL_BASE_URL = 'https://www.mondialrelay.fr/';
+	const LABEL_FORMAT_A4 = 'A4';
+	const LABEL_FORMAT_A5 = 'A5';
+	const LABEL_FORMAT_10X15 = '10x15';
 
 	var $error_code = 1;
 
 	var $error_message = '';
+
+	public static function get_label_format() {
+		$label_format = get_option( 'wms_mondial_relay_label_format', self::LABEL_FORMAT_A4 );
+		$allowed_formats = [ 
+			self::LABEL_FORMAT_A4,
+			self::LABEL_FORMAT_A5,
+			self::LABEL_FORMAT_10X15,
+		];
+
+		if ( ! in_array( $label_format, $allowed_formats, true ) ) {
+			return self::LABEL_FORMAT_A4;
+		}
+
+		return $label_format;
+	}
+
+	public static function format_label_url( $label_url, $label_format = '' ) {
+		if ( empty( $label_url ) ) {
+			return '';
+		}
+
+		if ( empty( $label_format ) ) {
+			$label_format = self::get_label_format();
+		}
+
+		if ( false !== strpos( $label_url, 'format=' ) ) {
+			return preg_replace( '/format=(A4|A5|10x15)/i', 'format=' . $label_format, $label_url );
+		}
+
+		return add_query_arg( 'format', $label_format, $label_url );
+	}
+
+	private function get_absolute_label_url( $label_url ) {
+		if ( empty( $label_url ) ) {
+			return '';
+		}
+
+		if ( 0 === strpos( $label_url, 'http://' ) || 0 === strpos( $label_url, 'https://' ) ) {
+			return $label_url;
+		}
+
+		return self::LABEL_BASE_URL . ltrim( $label_url, '/' );
+	}
+
+	private function build_security_key( $params ) {
+		$code = implode( "", $params );
+		$code .= get_option( 'wms_mondial_relay_private_key', '' );
+
+		return strtoupper( md5( $code ) );
+	}
+
+	private function normalize_language( $language = '' ) {
+		$language = strtoupper( $language );
+		$allowed_languages = [ 'FR', 'ES', 'NL' ];
+
+		if ( ! in_array( $language, $allowed_languages, true ) ) {
+			return 'FR';
+		}
+
+		return $language;
+	}
+
+	public function get_label_url_from_expedition( $expedition_number, $language = '' ) {
+		if ( empty( $expedition_number ) ) {
+			return false;
+		}
+
+		$language = ! empty( $language ) ? $language : substr( get_locale(), -2 );
+		$language = $this->normalize_language( $language );
+		$params = [ 
+			'Enseigne' => get_option( 'wms_mondial_relay_customer_code', '' ),
+			'Expeditions' => $expedition_number,
+			'Langue' => $language,
+		];
+		$params['Security'] = $this->build_security_key( $params );
+
+		try {
+			$client = new SoapClient( self::API_URL, [ 'trace' => true ] );
+			$result = $client->WSI3_GetEtiquettes( $params )->WSI3_GetEtiquettesResult;
+		} catch ( \Exception $e ) {
+			wms_logger( sprintf( __( 'Mondial Relay label URL retrieval failed: %s', 'wc-multishipping' ), $e->getMessage() ) );
+
+			return false;
+		}
+
+		if ( empty( $result->STAT ) || '0' !== (string) $result->STAT ) {
+			wms_logger( sprintf( __( 'Mondial Relay label URL retrieval returned an invalid status: %s', 'wc-multishipping' ), isset( $result->STAT ) ? $result->STAT : 'unknown' ) );
+
+			return false;
+		}
+
+		$url_field_by_format = [ 
+			self::LABEL_FORMAT_A4 => 'URL_PDF_A4',
+			self::LABEL_FORMAT_A5 => 'URL_PDF_A5',
+			self::LABEL_FORMAT_10X15 => 'URL_PDF_10x15',
+		];
+		$label_format = self::get_label_format();
+		$url_field = $url_field_by_format[ $label_format ];
+
+		if ( empty( $result->$url_field ) ) {
+			return false;
+		}
+
+		return $this->get_absolute_label_url( $result->$url_field );
+	}
 
 	public function get_pickup_point( $params ) {
 		if ( empty( $params ) )
@@ -73,9 +182,28 @@ class mondial_relay_api_helper {
 		return false;
 	}
 
-	public function get_labels_from_api( $label_URL ) {
-		$mondial_relay_url = 'https://www.mondialrelay.com' . $label_URL;
-		$fallback_url = 'https://wcmultishipping.com/api/shipping_labels/download?label_url=' . urlencode( $label_URL );
+	public function get_labels_from_api( $label_URL, $expedition_number = '' ) {
+		$formatted_label_url = $label_URL;
+		if ( ! empty( $expedition_number ) ) {
+			$formatted_label_url = $this->get_label_url_from_expedition( $expedition_number );
+		}
+
+		if ( empty( $formatted_label_url ) ) {
+			$formatted_label_url = self::format_label_url( $label_URL );
+			$formatted_label_url = $this->get_absolute_label_url( $formatted_label_url );
+		}
+
+		$mondial_relay_url = $formatted_label_url;
+		$fallback_label_url = $formatted_label_url;
+		$fallback_url_parts = wp_parse_url( $formatted_label_url );
+		if ( ! empty( $fallback_url_parts['host'] ) && ! empty( $fallback_url_parts['path'] ) ) {
+			$fallback_label_url = $fallback_url_parts['path'];
+			if ( ! empty( $fallback_url_parts['query'] ) ) {
+				$fallback_label_url .= '?' . $fallback_url_parts['query'];
+			}
+		}
+
+		$fallback_url = 'https://wcmultishipping.com/api/shipping_labels/download?label_url=' . urlencode( $fallback_label_url );
 
 		$response = wp_remote_get( $mondial_relay_url );
 		$http_code = wp_remote_retrieve_response_code( $response );

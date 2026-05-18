@@ -64,6 +64,9 @@ abstract class abstract_order {
 	public function get_orders( $current_page = 10, $per_page = 0, $args = [], $filters = [] ) {
 		global $wpdb;
 
+		$current_page = absint( $current_page );
+		$per_page = absint( $per_page );
+
 		$additional_where_conditions = $this->add_where_conditions( $filters );
 		if ( ! empty( $additional_where_conditions ) )
 			$this->where = array_merge( $additional_where_conditions, $this->where );
@@ -76,7 +79,7 @@ abstract class abstract_order {
 		$query .= $this->add_order_by( $args );
 
 		if ( 0 < $current_page && 0 < $per_page ) {
-			$offset = ( $current_page - 1 ) * $per_page;
+			$offset = absint( ( $current_page - 1 ) * $per_page );
 			$query .= " LIMIT $per_page OFFSET $offset";
 		}
 
@@ -149,6 +152,25 @@ abstract class abstract_order {
 		return '(' . implode( ',', $chrono_shipping_methods ) . ')';
 	}
 
+	private function prepare_in_condition( $values ) {
+		global $wpdb;
+
+		$values = array_values(
+			array_filter( (array) $values, function ( $value ) {
+				return '' !== $value;
+			} )
+		);
+
+		if ( empty( $values ) ) {
+			return '';
+		}
+
+		$placeholders = implode( ', ', array_fill( 0, count( $values ), '%s' ) );
+		$args = array_merge( [ '(' . $placeholders . ')' ], $values );
+
+		return call_user_func_array( [ $wpdb, 'prepare' ], $args );
+	}
+
 	private function add_where_conditions( $request_filters = [] ) {
 		$filters = [];
 		global $wpdb;
@@ -159,55 +181,71 @@ abstract class abstract_order {
 		if ( ! empty( $request_filters['search'] ) ) {
 
 			$search = sanitize_text_field( $request_filters['search'] );
+			$search_like = '%' . $wpdb->esc_like( $search ) . '%';
 
-
-			$filters['search'] = '(';
-
-			$filters['search'] .= "({$wpdb->prefix}woocommerce_order_items.order_id = '%{$search}%')";
+			$search_conditions = [
+				$wpdb->prepare( "CAST({$wpdb->prefix}woocommerce_order_items.order_id AS CHAR) LIKE %s", $search_like ),
+			];
 
 
 			if ( OrderUtil::custom_orders_table_usage_is_enabled() ) {
 
-				$filters['search'] .= " OR (DATE_FORMAT({$wpdb->prefix}wc_orders.date_created_gmt, '%m-%d-%Y') LIKE '%{$search}%')";
+				$search_conditions[] = $wpdb->prepare( "DATE_FORMAT({$wpdb->prefix}wc_orders.date_created_gmt, '%%m-%%d-%%Y') LIKE %s", $search_like );
 
 
+				$search_columns = [
+					"{$wpdb->prefix}wc_order_addresses.first_name",
+					"{$wpdb->prefix}wc_order_addresses.last_name",
+					"{$wpdb->prefix}wc_order_addresses.address_1",
+					"{$wpdb->prefix}wc_order_addresses.address_2",
+					"{$wpdb->prefix}wc_order_addresses.city",
+					"{$wpdb->prefix}wc_order_addresses.state",
+					"{$wpdb->prefix}wc_order_addresses.postcode",
+					"{$wpdb->prefix}wc_order_addresses.country",
+					"{$wpdb->prefix}wc_order_addresses.email",
+				];
 
-				$filters['search'] .= " 
-            OR {$wpdb->prefix}wc_order_addresses.first_name LIKE '%{$search}%'
-			OR {$wpdb->prefix}wc_order_addresses.last_name LIKE '%{$search}%'
-			OR {$wpdb->prefix}wc_order_addresses.address_1 LIKE '%{$search}%'
-			OR {$wpdb->prefix}wc_order_addresses.address_2 LIKE '%{$search}%'
-			OR {$wpdb->prefix}wc_order_addresses.city LIKE '%{$search}%'
-			OR {$wpdb->prefix}wc_order_addresses.state LIKE '%{$search}%'
-			OR {$wpdb->prefix}wc_order_addresses.postcode LIKE '%{$search}%'
-			OR {$wpdb->prefix}wc_order_addresses.country LIKE '%{$search}%'
-			OR {$wpdb->prefix}wc_order_addresses.email LIKE '%{$search}%'";
+				foreach ( $search_columns as $search_column ) {
+					$search_conditions[] = $wpdb->prepare( "$search_column LIKE %s", $search_like );
+				}
 
-				$filters['search'] .= " OR ({$wpdb->prefix}woocommerce_order_items.order_item_type = 'shipping'
-            AND {$wpdb->prefix}woocommerce_order_items.order_item_name LIKE '%{$search}%')";
+				$search_conditions[] = $wpdb->prepare(
+					"({$wpdb->prefix}woocommerce_order_items.order_item_type = 'shipping'
+	            AND {$wpdb->prefix}woocommerce_order_items.order_item_name LIKE %s)",
+					$search_like
+				);
 
-				$filters['search'] .= " OR ({$wpdb->prefix}wc_orders.status LIKE '%{$search}%')";
-				$filters['search'] .= ')';
+				$search_conditions[] = $wpdb->prepare( "{$wpdb->prefix}wc_orders.status LIKE %s", $search_like );
 			} else {
 
-				$filters['search'] .= " OR (DATE_FORMAT({$wpdb->prefix}posts.post_date_gmt, '%m-%d-%Y') LIKE '%{$search}%')";
+				$search_conditions[] = $wpdb->prepare( "DATE_FORMAT({$wpdb->prefix}posts.post_date_gmt, '%%m-%%d-%%Y') LIKE %s", $search_like );
 
-				$filters['search'] .= " OR (
-            ({$wpdb->prefix}postmeta.meta_key = '_shipping_first_name'
-			OR {$wpdb->prefix}postmeta.meta_key = '_shipping_last_name'
-			OR {$wpdb->prefix}postmeta.meta_key = '_shipping_address_1'
-			OR {$wpdb->prefix}postmeta.meta_key = '_shipping_address_2'
-			OR {$wpdb->prefix}postmeta.meta_key = '_shipping_city'
-			OR {$wpdb->prefix}postmeta.meta_key = '_shipping_country'
-			OR {$wpdb->prefix}postmeta.meta_key = '_shipping_postcode')
-			AND {$wpdb->prefix}postmeta.meta_value LIKE '%{$search}%')";
+				$shipping_meta_keys = $this->prepare_in_condition( [
+					'_shipping_first_name',
+					'_shipping_last_name',
+					'_shipping_address_1',
+					'_shipping_address_2',
+					'_shipping_city',
+					'_shipping_country',
+					'_shipping_postcode',
+				] );
 
-				$filters['search'] .= " OR ({$wpdb->prefix}woocommerce_order_items.order_item_type = 'shipping'
-            AND {$wpdb->prefix}woocommerce_order_items.order_item_name LIKE '%{$search}%')";
+				$search_conditions[] = $wpdb->prepare(
+					"({$wpdb->prefix}postmeta.meta_key IN {$shipping_meta_keys}
+				AND {$wpdb->prefix}postmeta.meta_value LIKE %s)",
+					$search_like
+				);
 
-				$filters['search'] .= " OR ({$wpdb->prefix}posts.post_status LIKE '%{$search}%')";
-				$filters['search'] .= ')';
+				$search_conditions[] = $wpdb->prepare(
+					"({$wpdb->prefix}woocommerce_order_items.order_item_type = 'shipping'
+	            AND {$wpdb->prefix}woocommerce_order_items.order_item_name LIKE %s)",
+					$search_like
+				);
+
+				$search_conditions[] = $wpdb->prepare( "{$wpdb->prefix}posts.post_status LIKE %s", $search_like );
 			}
+
+			$filters['search'] = '(' . implode( ' OR ', $search_conditions ) . ')';
 		}
 
 		foreach ( $request_filters as $one_filter_type => $one_filter_value ) {
@@ -222,9 +260,10 @@ abstract class abstract_order {
 		}
 
 		if ( ! empty( $request_filters['shipping_country'] ) && ( is_array( $request_filters['shipping_country'] ) ) ) {
+			$shipping_countries = $this->prepare_in_condition( $request_filters['shipping_country'] );
 
 			if ( OrderUtil::custom_orders_table_usage_is_enabled() ) {
-				$filters[] = "{$wpdb->prefix}wc_order_addresses.country IN ('" . implode( "', '", $request_filters['shipping_country'] ) . "')";
+				$filters[] = "{$wpdb->prefix}wc_order_addresses.country IN {$shipping_countries}";
 			} else {
 				$join_alias = "{$wpdb->prefix}postmeta";
 
@@ -235,26 +274,25 @@ abstract class abstract_order {
 				}
 
 				$filters[] = "($join_alias.meta_key = '_shipping_country'
-            AND $join_alias.meta_value IN ('" . implode( "', '", $request_filters['shipping_country'] ) . "'))";
+	            AND $join_alias.meta_value IN {$shipping_countries})";
 			}
 		}
 
 		if ( ! empty( $request_filters['shipping_methods'] ) && ( is_array( $request_filters['shipping_methods'] ) ) ) {
+			$shipping_methods = $this->prepare_in_condition( $request_filters['shipping_methods'] );
 
 			$filters[] = "{$wpdb->prefix}woocommerce_order_itemmeta.meta_key = 'method_id'
-            AND {$wpdb->prefix}woocommerce_order_itemmeta.meta_value
-            IN ('" . implode( "', '", $request_filters['shipping_methods'] ) . "')";
+	            AND {$wpdb->prefix}woocommerce_order_itemmeta.meta_value
+	            IN {$shipping_methods}";
 		}
 
 		if ( ! empty( $request_filters['woo_status'] ) && ( is_array( $request_filters['woo_status'] ) ) ) {
+			$woo_statuses = $this->prepare_in_condition( $request_filters['woo_status'] );
 
 			if ( OrderUtil::custom_orders_table_usage_is_enabled() ) {
-				$filters[] = "{$wpdb->prefix}wc_orders.status IN ('" . implode( "', '", $request_filters['woo_status'] ) . "')";
+				$filters[] = "{$wpdb->prefix}wc_orders.status IN {$woo_statuses}";
 			} else {
-				$filters[] = "{$wpdb->prefix}posts.post_status IN ('" . implode(
-					"', '",
-					$request_filters['woo_status']
-				) . "')";
+				$filters[] = "{$wpdb->prefix}posts.post_status IN {$woo_statuses}";
 			}
 		}
 
@@ -312,8 +350,12 @@ abstract class abstract_order {
 
 		$ord = " ORDER BY {$wpdb->prefix}" . $ord . ' ';
 
-		if ( ! empty( $args['order'] ) )
-			$ord .= $args['order'] . ' ';
+		if ( ! empty( $args['order'] ) ) {
+			$order = strtoupper( sanitize_text_field( $args['order'] ) );
+			if ( in_array( $order, [ 'ASC', 'DESC' ], true ) ) {
+				$ord .= $order . ' ';
+			}
+		}
 
 		return $ord;
 	}

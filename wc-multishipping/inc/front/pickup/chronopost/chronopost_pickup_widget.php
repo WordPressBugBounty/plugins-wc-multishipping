@@ -5,6 +5,7 @@ namespace WCMultiShipping\inc\front\pickup\chronopost;
 
 
 use WCMultiShipping\inc\admin\classes\chronopost\chronopost_api_helper;
+use WCMultiShipping\inc\admin\classes\chronopost\chronopost_connection_manager;
 use WCMultiShipping\inc\admin\classes\chronopost\chronopost_order;
 use WCMultiShipping\inc\admin\classes\chronopost\chronopost_shipping_methods;
 use WCMultiShipping\inc\front\pickup\abstract_classes\abstract_pickup_widget;
@@ -31,6 +32,7 @@ class chronopost_pickup_widget extends abstract_pickup_widget
         $shipping_provider = wms_get_var('cmd', 'shipping_provider', '');
         if (static::SHIPPING_PROVIDER_ID !== $shipping_provider) return;
 
+        $shipping_method_id = wms_get_var( 'string', 'shipping_method_id', '' );
         $city = wms_get_var('string', 'city', '');
         $zip_code = wms_get_var('cmd', 'zipcode', '');
         $country = wms_get_var('cmd', 'country', 'FR');
@@ -43,10 +45,11 @@ class chronopost_pickup_widget extends abstract_pickup_widget
                 ]
             );
         }
+        $connection_manager = chronopost_connection_manager::get_instance();
         $account_number = get_option('wms_chronopost_account_number', '');
         $password = get_option('wms_chronopost_account_password', '');
 
-        if (empty($account_number) || empty($password)) {
+        if ($connection_manager->is_soap_mode() && (empty($account_number) || empty($password))) {
             wp_send_json(
                 [
                     'error' => true,
@@ -55,24 +58,15 @@ class chronopost_pickup_widget extends abstract_pickup_widget
             );
         }
 
-        $params = [
-            'accountNumber' => get_option('wms_chronopost_account_number'),
-            'password' => get_option('wms_chronopost_account_password'),
-            'zipCode' => $zip_code,
-            'city' => $city,
-            'countryCode' => $country,
-            'type' => 'P',
-            'productCode' => self::CHRONOPOST_RELAY_PRODUCT_CODE,
-            'service' => 'T',
-            'weight' => 2000,
-            'shippingDate' => date('d/m/Y'),
-            'maxPointChronopost' => 20,
-            'maxDistanceSearch' => 20,
-            'holidayTolerant' => 1,
-        ];
         $chronopost_api_helper = new chronopost_api_helper();
-
-        $result = $chronopost_api_helper->get_pickup_point($params);
+        $result = $chronopost_api_helper->search_relay_points(
+            $shipping_method_id,
+            [
+                'postcode' => $zip_code,
+                'city' => $city,
+                'country' => $country,
+            ]
+        );
         if (!empty($result->errorCode)) {
             wp_send_json(
                 [
@@ -84,8 +78,9 @@ class chronopost_pickup_widget extends abstract_pickup_widget
 
 
         $pickup_points = [];
+        $raw_points = is_array($result->listePointRelais) ? $result->listePointRelais : [$result->listePointRelais];
 
-        foreach ($result->listePointRelais as $one_pickup) {
+        foreach ($raw_points as $one_pickup) {
             $additional_pickup = [
                 'id' => wms_display_value($one_pickup->identifiant),
                 'name' => wms_display_value($one_pickup->nom),

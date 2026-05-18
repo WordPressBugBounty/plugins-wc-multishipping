@@ -97,7 +97,7 @@ class mondial_relay_abstract_shipping extends abstract_shipping {
 			if ( $woocommerce_weight_unit == 'g' && $total_weight > 0 )
 				$total_weight = $total_weight * 1000;
 
-			$total_price = get_option( 'wms_mondial_relay_price_before_discount', 'no' ) === 'yes' ? $package['contents_cost'] : $package['cart_subtotal'];
+			$total_price = get_option( 'wms_mondial_relay_price_before_discount', 'yes' ) === 'no' ? $package['contents_cost'] : $package['cart_subtotal'];
 
 			$cart_shipping_classes = [];
 			$rates = $this->get_rates();

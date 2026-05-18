@@ -85,10 +85,14 @@ abstract class abstract_helper {
 			'dashicons-location',
 			58
 		);
-		$hook = add_submenu_page( 'woocommerce', static::SHIPPING_PROVIDER_DISPLAYED_NAME, static::SHIPPING_PROVIDER_DISPLAYED_NAME, 'read', 'wc_wms_view_' . static::SHIPPING_PROVIDER_ID, [ 
+		$hook = add_submenu_page( 'woocommerce', static::SHIPPING_PROVIDER_DISPLAYED_NAME, static::SHIPPING_PROVIDER_DISPLAYED_NAME, 'manage_woocommerce', 'wc_wms_view_' . static::SHIPPING_PROVIDER_ID, [
 			$this,
 			'display_order_tables_' . static::SHIPPING_PROVIDER_ID,
 		] );
+		add_action( "load-$hook", [
+			$this,
+			'check_order_listing_access',
+		], 0 );
 		add_action( "load-$hook", [ 
 			$this,
 			'add_screen_option',
@@ -97,7 +101,13 @@ abstract class abstract_helper {
 			$this,
 			'check_installation_registered_before_access',
 		] );
-		
+
+	}
+
+	public function check_order_listing_access() {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_die( esc_html__( 'You are not allowed to access WcMultiShipping orders.', 'wc-multishipping' ) );
+		}
 	}
 
 	public function check_installation_registered_before_access() {

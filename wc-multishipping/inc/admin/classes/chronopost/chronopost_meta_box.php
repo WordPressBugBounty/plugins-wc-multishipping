@@ -155,9 +155,9 @@ class chronopost_meta_box extends abstract_meta_box
         }
 
         $shipping_methods_no_saturday = [
-            'chronorelaiseurope',
-            'chronoexpress',
-            'chronoclassic',
+            'chronopost_relais_europe',
+            'chronopost_express',
+            'chronopost_classic',
         ];
 
 
@@ -197,7 +197,7 @@ class chronopost_meta_box extends abstract_meta_box
         $parcel_class = $this->helper->get_parcel_class();
         $parcels_dimensions = $parcel_class::get_parcels_dimensions($this->order);
 
-        $max_weight = $this->shipping_method_id == 'chronorelais' || $this->shipping_method_id == 'chronorelaiseurope' ? 20 : 30;
+        $max_weight = $this->shipping_method_id == 'chronopost_relais' || $this->shipping_method_id == 'chronopost_relais_europe' ? 20 : 30;
         if (get_option('woocommerce_weight_unit') == 'g') $max_weight = $max_weight * 1000;
 
         ?>

@@ -55,7 +55,7 @@ class wms_admin_init {
 
 
 		if ( $file == $this_plugin ) {
-			$settings_link = '<a href="' . admin_url( 'admin.php?page=wc-settings&tab=shipping' ) . '">' . __( 'Settings', 'wc-multishipping' ) . '</a>';
+			$settings_link = '<a href="' . admin_url( 'admin.php?page=wc-multishipping' ) . '">' . __( 'Settings', 'wc-multishipping' ) . '</a>';
 
 			array_unshift( $links, $settings_link );
 		}

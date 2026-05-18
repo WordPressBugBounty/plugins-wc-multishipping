@@ -11,6 +11,9 @@ class mondial_relay_settings extends abstract_settings {
 
 	const SHIPPING_METHOD_ID = 'mondial_relay';
 	const SHIPPING_METHOD_DISPLAYED_NAME = 'Mondial Relay';
+	const TEST_CUSTOMER_CODE = 'BDTEST13';
+	const TEST_PRIVATE_KEY = 'TestAPI1key';
+	const TEST_BRAND_CODE = '11';
 
 	public function __construct() {
 		add_filter( 'woocommerce_settings_tabs_array', [ $this, 'add_settings_tab' ], 50 );
@@ -33,7 +36,7 @@ class mondial_relay_settings extends abstract_settings {
 
 	public static function get_settings() {
 		$first_status = [ '' => __( 'Do not change status', 'wc-multishipping' ) ];
-		$all_status = array_merge( $first_status, wc_get_order_statuses() );
+		$all_status = array_unique( array_merge( $first_status, wc_get_order_statuses() ) );
 
 		$wc_status = array_filter( $all_status, function ($one_value) {
 			return false === strpos( $one_value, 'Colissimo' );
@@ -41,6 +44,7 @@ class mondial_relay_settings extends abstract_settings {
 
 		$value = get_option( 'wms_mondial_relay_enable', 'yes' );
 		$price_before_discount = get_option( 'wms_mondial_relay_price_before_discount', 'yes' );
+		$has_saved_private_key = '' !== trim( (string) get_option( 'wms_mondial_relay_private_key', '' ) );
 
 		$config_fields = [ 
 			[ 
@@ -84,20 +88,12 @@ class mondial_relay_settings extends abstract_settings {
 				"title" => __( "Brand Code", "wc-multishipping" ),
 				"class" => "",
 				"default" => "",
-				"desc" => "<b>" . __( "Test credentials", "wc-multishipping" ) . "</b><br/>" . __( "Customer Code", "wc-multishipping" ) . " : BDTEST13 <br/> " . __( "Private Key", "wc-multishipping" ) . " : TestAPI1key <br/> " . __( "Brand Code", "wc-multishipping" ) . " : 11",
-			],
-			[ 
-				"id" => "wms_mondial_relay_brand_code",
-				"type" => "",
-				"title" => "",
-				"class" => "",
-				"default" => "",
-				"desc" => __( "Test credentials", "wc-multishipping" ) . "<br/>" . __( "Customer Code", "wc-multishipping" ) . " : BDTEST13 <br/> " . __( "Private Key", "wc-multishipping" ) . " : TestAPI1key <br/> " . __( "Brand Code", "wc-multishipping" ) . " : 11",
+				"desc" => self::get_test_credentials_html(),
 			],
 			[ 
 				"id" => "wms_mondial_relay_account_test_credentials",
 				"type" => "button",
-				"title" => __( "Access Test", "wc-multishipping" ),
+				"title" => __( "Test Mondial Relay credentials", "wc-multishipping" ),
 				"class" => "button-secondary",
 				"default" => "",
 			],
@@ -141,6 +137,18 @@ class mondial_relay_settings extends abstract_settings {
 				"id" => "wms_mondial_relay_section_label",
 				"type" => "title",
 				"title" => __( "Label", "wc-multishipping" ),
+			],
+			[ 
+				"id" => "wms_mondial_relay_label_format",
+				"type" => "select",
+				"title" => __( "Format", "wc-multishipping" ) . " " . __( "(required)", "wc-multishipping" ),
+				"class" => "",
+				"default" => "A4",
+				"options" => [ 
+					"A4" => "A4",
+					"A5" => "A5",
+					"10x15" => "10x15",
+				],
 			],
 			[ 
 				"id" => "wms_mondial_relay_section_label_generation_status",
@@ -371,6 +379,24 @@ class mondial_relay_settings extends abstract_settings {
 		return apply_filters( 'wc_settings_' . static::SHIPPING_METHOD_ID . '_settings', $config_fields );
 	}
 
+	public static function get_test_credentials_html() {
+		return '<strong>' . esc_html__( 'Test credentials', 'wc-multishipping' ) . '</strong><br/>' .
+			esc_html__( 'Customer Code', 'wc-multishipping' ) . ' : ' . self::TEST_CUSTOMER_CODE . '<br/> ' .
+			esc_html__( 'Private Key', 'wc-multishipping' ) . ' : ' . self::TEST_PRIVATE_KEY . '<br/> ' .
+			esc_html__( 'Brand Code', 'wc-multishipping' ) . ' : ' . self::TEST_BRAND_CODE;
+	}
+
+	public static function update_settings() {
+		if ( isset( $_POST['wms_mondial_relay_private_key'] ) ) {
+			$private_key = sanitize_text_field( wp_unslash( $_POST['wms_mondial_relay_private_key'] ) );
+
+			if ( '' === $private_key ) {
+				$_POST['wms_mondial_relay_private_key'] = get_option( 'wms_mondial_relay_private_key', '' );
+			}
+		}
+
+		woocommerce_update_options( static::get_settings() );
+	}
 
 	public function wms_mondial_relay_test_credentials_ajax() {
 		if ( ! current_user_can( 'administrator' ) )
@@ -378,6 +404,11 @@ class mondial_relay_settings extends abstract_settings {
 
 		$private_key = wms_get_var( 'cmd', 'private_key', '' );
 		$code_enseigne = wms_get_var( 'cmd', 'code_enseigne', '' );
+		$use_saved_secret = '1' === wms_get_var( 'cmd', 'use_saved_secret', '' );
+
+		if ( empty( $private_key ) && $use_saved_secret ) {
+			$private_key = get_option( 'wms_mondial_relay_private_key', '' );
+		}
 
 		if ( empty( $code_enseigne ) || empty( $private_key ) ) {
 			$response = [ 

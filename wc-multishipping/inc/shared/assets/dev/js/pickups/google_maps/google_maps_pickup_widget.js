@@ -205,9 +205,11 @@
       return blockSelected;
     }
 
-    // Try traditional checkout
-    const traditionalSelected = document.querySelector('input[name^="shipping_method"]:checked');
-    if (traditionalSelected) {
+    // Try traditional checkout, including WooCommerce's single-method hidden input.
+    const traditionalSelected =
+      document.querySelector('input[name^="shipping_method"]:checked') ||
+      document.querySelector('input[name^="shipping_method"][type="hidden"]');
+    if (traditionalSelected?.value) {
       return traditionalSelected.value;
     }
 
