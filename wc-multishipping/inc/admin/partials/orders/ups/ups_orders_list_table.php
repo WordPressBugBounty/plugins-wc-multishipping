@@ -76,6 +76,14 @@ END_HTML;
 
 			return;
 		}
+		if ( ! $this->has_valid_pro_license() ) {
+			wms_enqueue_message(
+				__( 'WcMultishipping Pro version is needed to handle shipping labels directly from your WordPress website. Click on the button below to get it.', 'wc-multishipping' ),
+				'error'
+			);
+
+			return;
+		}
 
 		switch ( $action ) {
 			case self::BULK_ACTION_GENERATE_OUTWARD:
@@ -171,5 +179,3 @@ END_HTML;
 	}
 
 }
-
-

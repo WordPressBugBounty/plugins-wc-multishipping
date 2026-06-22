@@ -49,8 +49,11 @@ class chronopost_parcel extends abstract_parcel {
 
 		$chronopost_label_class = new chronopost_label();
 		$chronopost_api_helper = new chronopost_api_helper();
+		$should_update_order_status = 'jwt' !== chronopost_connection_manager::get_default_connection_type();
 
 		foreach ( $splitted_order_ids as $one_order_id ) {
+			$change_order_status = false;
+
 			if ( empty( $one_order_id ) ) {
 				continue;
 			}
@@ -105,7 +108,7 @@ class chronopost_parcel extends abstract_parcel {
 					$change_order_status = self::get_status_from_code( $event_last_code );
 				}
 			}
-			if ( ! empty( $change_order_status ) ) {
+			if ( $should_update_order_status && ! empty( $change_order_status ) ) {
 				$order->set_status( $change_order_status );
 				$order->save();
 			}

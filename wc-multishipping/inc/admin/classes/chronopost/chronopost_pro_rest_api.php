@@ -13,7 +13,7 @@ class chronopost_pro_rest_api {
 
 	const NAMESPACE = 'chronopost/v1';
 	const API_VERSION = '1.1.0';
-	const DRY_RUN_MODE = true;
+	const DRY_RUN_MODE = false;
 
 	public function register_routes() {
 		register_rest_route( self::NAMESPACE, '/renew', [

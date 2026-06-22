@@ -2,6 +2,8 @@
 
 namespace WCMultiShipping\inc\admin\classes\customer;
 
+use WCMultiShipping\inc\admin\classes\telemetry\wms_telemetry;
+
 defined( 'ABSPATH' ) || die( 'Restricted Access' );
 
 class wms_customer_registration {
@@ -66,6 +68,7 @@ class wms_customer_registration {
 		}
 
 		update_option( self::OPTION_CUSTOMER_EMAIL, $email );
+		wms_telemetry::set_enabled( isset( $_POST['wms_telemetry_enabled'] ) );
 
 		self::send_registration_to_api( $email );
 

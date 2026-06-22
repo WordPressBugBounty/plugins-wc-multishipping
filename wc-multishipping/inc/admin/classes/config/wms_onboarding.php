@@ -8,6 +8,7 @@ use WCMultiShipping\inc\admin\classes\chronopost\chronopost_settings;
 use WCMultiShipping\inc\admin\classes\chronopost\chronopost_shipping_methods;
 use WCMultiShipping\inc\admin\classes\customer\wms_customer_registration;
 use WCMultiShipping\inc\admin\classes\mondial_relay\mondial_relay_shipping_methods;
+use WCMultiShipping\inc\admin\classes\telemetry\wms_telemetry;
 use WCMultiShipping\inc\front\pickup\chronopost\chronopost_pickup_widget;
 use WCMultiShipping\inc\front\pickup\mondial_relay\mondial_relay_pickup_widget;
 
@@ -125,6 +126,10 @@ class wms_onboarding {
 		$state['last_step'] = sanitize_key( wp_unslash( $_POST['current_step'] ?? self::STEP_CARRIERS ) );
 
 		update_option( self::OPTION_STATE, $state, false );
+		wms_telemetry::track( 'plugin_onboarding_dismissed', [
+			'step' => $state['last_step'],
+			'result' => 'success',
+		] );
 		wms_enqueue_message( __( 'The onboarding has been hidden. You can relaunch it anytime from the dashboard.', 'wc-multishipping' ), 'success' );
 
 		self::redirect_to_dashboard();
@@ -157,6 +162,14 @@ class wms_onboarding {
 		$state['last_step'] = self::STEP_PREVIEW;
 
 		update_option( self::OPTION_STATE, $state, false );
+		wms_telemetry::track( 'plugin_onboarding_step_completed', [
+			'step' => self::STEP_PREVIEW,
+			'result' => 'success',
+		] );
+		wms_telemetry::track( 'plugin_onboarding_completed', [
+			'step' => self::STEP_PREVIEW,
+			'result' => 'success',
+		] );
 		wms_enqueue_message( __( 'The onboarding is complete. You can reopen it whenever you need from the WCMultiShipping dashboard.', 'wc-multishipping' ), 'success' );
 
 		self::redirect_to_dashboard();
@@ -178,6 +191,10 @@ class wms_onboarding {
 		$draft['checkout_preview_product_id'] = $product_id;
 		$draft['checkout_preview_opened_at'] = current_time( 'mysql' );
 		self::save_draft( $draft );
+		wms_telemetry::track( 'shipping_rate_preview_run', [
+			'step' => self::STEP_PREVIEW,
+			'result' => 'started',
+		] );
 
 		$preview_url = add_query_arg(
 			[
@@ -245,6 +262,19 @@ class wms_onboarding {
 
 		WC()->cart->calculate_totals();
 		self::prime_preview_shipping_method( $draft, $sanitized_zone_id );
+		$has_shipping_rates = self::cart_has_shipping_rates();
+		wms_telemetry::track( 'shipping_rate_preview_result', [
+			'step' => self::STEP_PREVIEW,
+			'result' => $has_shipping_rates ? 'success' : 'no_rates',
+		] );
+
+		if ( ! $has_shipping_rates ) {
+			wms_telemetry::track( 'shipping_rate_error_seen', [
+				'step' => self::STEP_PREVIEW,
+				'result' => 'error',
+				'error_category' => 'no_rates',
+			] );
+		}
 
 		wp_safe_redirect( wc_get_checkout_url() );
 		exit;
@@ -325,6 +355,8 @@ class wms_onboarding {
 			'wms_api_key' => get_option( 'wms_api_key', '' ),
 			'wms_license_expiration_date' => (int) get_option( 'wms_license_expiration_date', 0 ),
 			'customer_email' => get_option( 'wms_customer_email', wp_get_current_user()->user_email ),
+			'telemetry_enabled' => wms_telemetry::is_enabled(),
+			'telemetry_preference_saved' => wms_telemetry::has_saved_preference(),
 		];
 	}
 
@@ -647,6 +679,19 @@ class wms_onboarding {
 		}
 
 		self::update_last_step( self::STEP_CONNECTION );
+		wms_telemetry::track( 'plugin_onboarding_step_completed', [
+			'step' => self::STEP_CARRIERS,
+			'result' => 'success',
+			'configured_carriers_count' => count( $draft['selected_carriers'] ),
+		] );
+
+		foreach ( $draft['selected_carriers'] as $carrier ) {
+			wms_telemetry::track( 'carrier_config_saved', [
+				'carrier' => $carrier,
+				'result' => 'selected',
+				'configured_carriers_count' => count( $draft['selected_carriers'] ),
+			] );
+		}
 		wms_enqueue_message( __( 'Your onboarding scope has been saved.', 'wc-multishipping' ), 'success' );
 		self::redirect_to_wizard( self::STEP_CONNECTION );
 	}
@@ -715,6 +760,12 @@ class wms_onboarding {
 			update_option( 'wms_mondial_relay_brand_code', $brand_code );
 		}
 
+		wms_telemetry::track( 'carrier_config_saved', [
+			'carrier' => $active_carrier,
+			'result' => 'success',
+			'configured_carriers_count' => count( $selected_carriers ),
+		] );
+
 		$current_index = array_search( $active_carrier, $selected_carriers, true );
 		if ( false !== $current_index && isset( $selected_carriers[ $current_index + 1 ] ) ) {
 			wms_enqueue_message( __( 'This carrier connection has been saved.', 'wc-multishipping' ), 'success' );
@@ -722,6 +773,11 @@ class wms_onboarding {
 		}
 
 		self::update_last_step( self::STEP_ADDRESSES );
+		wms_telemetry::track( 'plugin_onboarding_step_completed', [
+			'step' => self::STEP_CONNECTION,
+			'result' => 'success',
+			'configured_carriers_count' => count( $selected_carriers ),
+		] );
 		wms_enqueue_message( __( 'Your carrier connection settings have been saved.', 'wc-multishipping' ), 'success' );
 		self::redirect_to_wizard( self::STEP_ADDRESSES );
 	}
@@ -758,6 +814,11 @@ class wms_onboarding {
 		}
 
 		self::update_last_step( self::STEP_RATES );
+		wms_telemetry::track( 'plugin_onboarding_step_completed', [
+			'step' => self::STEP_ADDRESSES,
+			'result' => 'success',
+			'configured_carriers_count' => count( $selected_carriers ),
+		] );
 		wms_enqueue_message( __( 'Your sender and billing details have been saved.', 'wc-multishipping' ), 'success' );
 		self::redirect_to_wizard( self::STEP_RATES );
 	}
@@ -797,6 +858,11 @@ class wms_onboarding {
 		$draft['selected_services'] = $default_rate_services;
 		self::save_draft( $draft );
 		self::update_last_step( self::STEP_PREVIEW );
+		wms_telemetry::track( 'plugin_onboarding_step_completed', [
+			'step' => self::STEP_RATES,
+			'result' => 'success',
+			'configured_carriers_count' => count( self::get_selected_carriers( $draft ) ),
+		] );
 
 		wms_enqueue_message(
 			__( 'A default 10€ test rate has been applied to the France shipping zone for the selected pickup methods.', 'wc-multishipping' ),
@@ -1591,6 +1657,25 @@ class wms_onboarding {
 		WC()->cart->calculate_totals();
 	}
 
+	private static function cart_has_shipping_rates() {
+		if ( ! WC()->shipping() ) {
+			return false;
+		}
+
+		$packages = WC()->shipping()->get_packages();
+		if ( ! is_array( $packages ) ) {
+			return false;
+		}
+
+		foreach ( $packages as $package ) {
+			if ( ! empty( $package['rates'] ) && is_array( $package['rates'] ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	private static function find_preferred_preview_rate_id( $draft, $zone_id, $rates ) {
 		$selected_services = self::get_selected_services( $draft );
 		if ( empty( $selected_services ) ) {
@@ -1643,6 +1728,14 @@ class wms_onboarding {
 		$state['last_step'] = $step;
 
 		update_option( self::OPTION_STATE, $state, false );
+		wms_telemetry::track_once( 'plugin_onboarding_started', self::WIZARD_VERSION, [
+			'step' => $step,
+			'result' => 'started',
+		] );
+		wms_telemetry::track_once( 'plugin_onboarding_step_viewed', self::WIZARD_VERSION . '_' . $step, [
+			'step' => $step,
+			'result' => 'viewed',
+		] );
 	}
 
 	private static function redirect_to_wizard( $step, $args = [] ) {

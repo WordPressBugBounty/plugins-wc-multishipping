@@ -4,7 +4,7 @@ Donate link:
 Tags: WooCommerce, Mondial Relay, Chronopost
 Requires at least: 4.7
 Tested up to: 6.9
-Stable tag: 3.0.3
+Stable tag: 3.0.5
 Requires PHP: 5.7
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -129,6 +129,14 @@ We provide a detailed setup guide on our website. You can follow the steps here:
 3. Chronopost shipping methods configuration
 
 == Changelog ==
+
+= 3.0.5 - June 2026 =
+Mondial Relay phone normalization fix for label generation
+Mondial Relay status synchronization batch increased
+Chronopost PRO tracking status handling improvements
+Chronopost PRO label action guards and clearer Pro requirement notices in the free package
+Privacy-first telemetry hardening
+Admin notice and sprintf fixes
 
 = 3.0.3 - May 2026 =
 Improved onboarding and carrier setup flow

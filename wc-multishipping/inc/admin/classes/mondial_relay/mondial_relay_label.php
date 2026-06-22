@@ -225,6 +225,13 @@ class mondial_relay_label extends abstract_label {
 		return $this;
 	}
 
+	private function format_phone_number( $phone ) {
+		$phone = preg_replace( '/[^0-9\+]/', '', (string) $phone );
+		$phone = preg_replace( '/^(\+33|0033)(\d)/', '0$2', $phone );
+
+		return substr( $phone, 0, 13 );
+	}
+
 	public function with_shipping_method( $order ) {
 		$shipping_method_id = mondial_relay_order::get_shipping_method_name( $order );
 		if ( empty( $shipping_method_id ) )
@@ -264,8 +271,8 @@ class mondial_relay_label extends abstract_label {
 			$this->payload['Expe_Ville'] = substr( strtoupper( remove_accents( get_option( 'wms_mondial_relay_shipper_city', '' ) ) ), 0, 26 );
 			$this->payload['Expe_CP'] = substr( strtoupper( remove_accents( get_option( 'wms_mondial_relay_shipper_zip_code', '' ) ) ), 0, 10 );
 			$this->payload['Expe_Pays'] = substr( strtoupper( remove_accents( get_option( 'wms_mondial_relay_shipper_country', '' ) ) ), 0, 2 );
-			$this->payload['Expe_Tel1'] = preg_replace( '/\s|(\+33|0033)(\d)/', '0$2', preg_replace( '/[^0-9\+\-]/', '', substr( get_option( 'wms_mondial_relay_shipper_phone', '' ), 0, 13 ) ) );
-			$this->payload['Expe_Tel2'] = preg_replace( '/\s|(\+33|0033)(\d)/', '0$2', preg_replace( '/[^0-9\+\-]/', '', substr( get_option( 'wms_mondial_relay_shipper_phone', '' ), 0, 13 ) ) );
+			$this->payload['Expe_Tel1'] = $this->format_phone_number( get_option( 'wms_mondial_relay_shipper_phone', '' ) );
+			$this->payload['Expe_Tel2'] = $this->format_phone_number( get_option( 'wms_mondial_relay_shipper_phone', '' ) );
 			$this->payload['Expe_Mail'] = substr( strtoupper( remove_accents( get_option( 'wms_mondial_relay_shipper_email', '' ) ) ), 0, 70 );
 		}
 
@@ -294,8 +301,8 @@ class mondial_relay_label extends abstract_label {
 			$this->payload['Dest_Ville'] = substr( remove_accents( $order->get_shipping_city() ), 0, 50 );
 			$this->payload['Dest_CP'] = substr( ( ( strlen( $order->get_shipping_postcode() ) == 4 && "FR" == $order->get_shipping_country() ) ? "0" . $order->get_shipping_postcode() : $order->get_shipping_postcode() ), 0, 9 );
 			$this->payload['Dest_Pays'] = substr( remove_accents( $order->get_shipping_country() ), 0, 2 );
-			$this->payload['Dest_Tel1'] = preg_replace( '/\s|(\+33|0033)(\d)/', '0$2', preg_replace( '/[^0-9\+\-]/', '', substr( $order->get_billing_phone(), 0, 13 ) ) );
-			$this->payload['Dest_Tel2'] = preg_replace( '/\s|(\+33|0033)(\d)/', '0$2', preg_replace( '/[^0-9\+\-]/', '', substr( $order->get_billing_phone(), 0, 13 ) ) );
+			$this->payload['Dest_Tel1'] = $this->format_phone_number( $order->get_billing_phone() );
+			$this->payload['Dest_Tel2'] = $this->format_phone_number( $order->get_billing_phone() );
 			$this->payload['Dest_Mail'] = substr( $order->get_billing_email() ? $order->get_billing_email() : $customer_obj->get_email(), 0, 70 );
 		}
 

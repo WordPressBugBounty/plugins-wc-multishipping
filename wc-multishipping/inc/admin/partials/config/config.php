@@ -1,6 +1,9 @@
 <?php defined( 'ABSPATH' ) || exit;
 
 $registration = $view_data['registration'];
+$telemetry_enabled = ! empty( $registration['telemetry_enabled'] );
+$telemetry_preference_saved = ! empty( $registration['telemetry_preference_saved'] );
+$telemetry_wizard_checked = $telemetry_preference_saved ? $telemetry_enabled : true;
 $steps = $view_data['steps'];
 $current_step = $view_data['current_step'];
 $current_step_data = null;
@@ -191,6 +194,13 @@ $connection_carrier_label = 'mondial_relay' === $active_connection_carrier ? __(
                                         <input type="email" class="wms-input" name="wms_email" value="<?php echo esc_attr( $registration['customer_email'] ); ?>" placeholder="<?php esc_attr_e( 'your@email.com', 'wc-multishipping' ); ?>" required>
                                     </label>
                                     <p class="wms-inline-note"><?php esc_html_e( 'This email helps us identify this installation and attach support requests to the right shop.', 'wc-multishipping' ); ?></p>
+                                    <label class="wms-telemetry-toggle wms-telemetry-toggle--wizard">
+                                        <input type="checkbox" name="wms_telemetry_enabled" value="1" <?php checked( $telemetry_wizard_checked ); ?>>
+                                        <span class="wms-telemetry-toggle__body">
+                                            <span class="wms-telemetry-toggle__title"><?php esc_html_e( 'I agree to share anonymous technical data to improve WCMultiShipping.', 'wc-multishipping' ); ?></span>
+                                            <span class="wms-telemetry-toggle__description"><?php esc_html_e( 'Optional. We never send emails, raw license keys, site URLs, carrier credentials, order data, or logs. You can opt out at any time in WCMultiShipping settings.', 'wc-multishipping' ); ?></span>
+                                        </span>
+                                    </label>
                                 </div>
                             </section>
 
@@ -563,6 +573,37 @@ $connection_carrier_label = 'mondial_relay' === $active_connection_carrier ? __(
                                     <button type="submit" class="button button-primary"><?php esc_html_e( 'Open checkout preview', 'wc-multishipping' ); ?></button>
                                 </form>
                             <?php endif; ?>
+                        </section>
+
+                        <section class="wms-dashboard-panel wms-telemetry-card">
+                            <div class="wms-dashboard-panel__header">
+                                <div>
+                                    <p class="wms-dashboard-label"><?php esc_html_e( 'Privacy', 'wc-multishipping' ); ?></p>
+                                    <h2><?php esc_html_e( 'Product analytics', 'wc-multishipping' ); ?></h2>
+                                    <p><?php esc_html_e( 'Optional anonymous diagnostics for onboarding, carrier setup, and checkout previews.', 'wc-multishipping' ); ?></p>
+                                </div>
+                            </div>
+                            <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="wms-telemetry-form">
+                                <input type="hidden" name="action" value="wms_save_telemetry_settings">
+                                <?php wp_nonce_field( 'wms_telemetry_settings', 'wms_telemetry_nonce' ); ?>
+                                <label class="wms-telemetry-toggle">
+                                    <input type="checkbox" name="wms_telemetry_enabled" value="1" <?php checked( $telemetry_enabled ); ?>>
+                                    <span class="wms-telemetry-toggle__body">
+                                        <span class="wms-telemetry-toggle__title"><?php esc_html_e( 'Share anonymous technical data', 'wc-multishipping' ); ?></span>
+                                        <span class="wms-telemetry-toggle__description"><?php esc_html_e( 'Helps prioritize fixes in setup, carrier connection, and checkout preview flows.', 'wc-multishipping' ); ?></span>
+                                    </span>
+                                </label>
+                                <ul class="wms-telemetry-list">
+                                    <li><?php esc_html_e( 'Never sends emails, raw license keys, site URLs, carrier credentials, order data, or logs.', 'wc-multishipping' ); ?></li>
+                                    <li><?php esc_html_e( 'You can turn it off here at any time.', 'wc-multishipping' ); ?></li>
+                                </ul>
+                                <div class="wms-telemetry-actions">
+                                    <span class="wms-telemetry-status<?php echo $telemetry_enabled ? ' is-enabled' : ''; ?>">
+                                        <?php echo esc_html( $telemetry_enabled ? __( 'Enabled', 'wc-multishipping' ) : __( 'Disabled', 'wc-multishipping' ) ); ?>
+                                    </span>
+                                    <button type="submit" class="button"><?php esc_html_e( 'Save preference', 'wc-multishipping' ); ?></button>
+                                </div>
+                            </form>
                         </section>
 
                     </aside>

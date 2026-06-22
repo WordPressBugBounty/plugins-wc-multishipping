@@ -16,6 +16,28 @@ class chronopost_pro_order_model {
 		'5X' => '5E',
 	];
 
+	private const PRO_ORDER_STATE_PROCESSING = 1;
+	private const PRO_ORDER_STATE_SHIPPED = 2;
+	private const PRO_ORDER_STATE_DELIVERED = 3;
+
+	private const PRO_SHIPPING_STATUS_BY_STATE = [
+		self::PRO_ORDER_STATE_PROCESSING => [
+			'label'     => 'En préparation',
+			'code'      => 'PRO_1',
+			'delivered' => false,
+		],
+		self::PRO_ORDER_STATE_SHIPPED => [
+			'label'     => 'Expédié',
+			'code'      => 'PRO_2',
+			'delivered' => false,
+		],
+		self::PRO_ORDER_STATE_DELIVERED => [
+			'label'     => 'Livré',
+			'code'      => 'PRO_3',
+			'delivered' => true,
+		],
+	];
+
 	private const IGNORED_ORDER_STATES = [
 		'trash',
 		'draft',
@@ -110,6 +132,8 @@ class chronopost_pro_order_model {
 		$order->update_meta_data( '_wms_chronopost_shipment_data', $existing );
 		$order->save();
 
+		$this->mark_order_for_tracking_update( $order_id );
+
 		$order->add_order_note(
 			sprintf(
 				__( 'Chronopost PRO: tracking number %s added.', 'wc-multishipping' ),
@@ -125,10 +149,9 @@ class chronopost_pro_order_model {
 			return;
 		}
 
-		$stati   = $this->get_order_stati();
-		$slug    = array_search( (string) $state_int, $stati, true );
+		$status_slug = $this->get_woocommerce_status_slug_from_pro_state( $state_int );
 
-		if ( $slug === false ) {
+		if ( empty( $status_slug ) ) {
 			wms_logger( sprintf(
 				__( 'Chronopost PRO: unknown status ID %d for order %d', 'wc-multishipping' ),
 				$state_int,
@@ -137,11 +160,11 @@ class chronopost_pro_order_model {
 			return;
 		}
 
-		$status_slug = str_replace( 'wc-', '', $slug );
-
 		if ( $order->get_status() !== $status_slug ) {
 			$order->update_status( $status_slug, '', true );
 		}
+
+		$this->update_pro_shipping_status_meta( $order, $state_int );
 	}
 
 	public function add_comment( $order_id, $message ) {
@@ -153,18 +176,68 @@ class chronopost_pro_order_model {
 	}
 
 	public function get_order_stati() {
-		$statuses = wc_get_order_statuses();
-		$keys     = array_keys( $statuses );
-		$indexed  = array_flip( $keys );
-		$result   = [];
-
-		foreach ( $indexed as $slug => $index ) {
-			$result[ str_replace( 'wc-', '', $slug ) ] = (string) $index;
-		}
-
-		return $result;
+		return [
+			'processing'                     => (string) self::PRO_ORDER_STATE_PROCESSING,
+			$this->get_shipped_status_slug() => (string) self::PRO_ORDER_STATE_SHIPPED,
+			'completed'                      => (string) self::PRO_ORDER_STATE_DELIVERED,
+		];
 	}
 
+
+	private function get_woocommerce_status_slug_from_pro_state( $state_int ) {
+		switch ( (int) $state_int ) {
+			case self::PRO_ORDER_STATE_PROCESSING:
+				return 'processing';
+			case self::PRO_ORDER_STATE_SHIPPED:
+				return $this->get_shipped_status_slug();
+			case self::PRO_ORDER_STATE_DELIVERED:
+				return 'completed';
+			default:
+				return false;
+		}
+	}
+
+	private function get_shipped_status_slug() {
+		$registered_statuses = wc_get_order_statuses();
+		if ( isset( $registered_statuses['wc-shipped'] ) ) {
+			return 'shipped';
+		}
+
+		return str_replace( 'wc-', '', chronopost_order::WC_WMS_TRANSIT );
+	}
+
+	private function update_pro_shipping_status_meta( $order, $state_int ) {
+		$status = self::PRO_SHIPPING_STATUS_BY_STATE[ (int) $state_int ] ?? null;
+		if ( empty( $status ) ) {
+			return;
+		}
+
+		$order->update_meta_data( chronopost_parcel::LAST_EVENT_LABEL_META_KEY, $status['label'] );
+		$order->update_meta_data( chronopost_parcel::LAST_EVENT_CODE_META_KEY, $status['code'] );
+		$order->update_meta_data( chronopost_parcel::LAST_EVENT_DATE_META_KEY, time() );
+		$order->update_meta_data(
+			chronopost_parcel::IS_DELIVERED_META_KEY,
+			$status['delivered'] ? chronopost_parcel::IS_DELIVERED_META_VALUE_TRUE : chronopost_parcel::IS_DELIVERED_META_VALUE_FALSE
+		);
+		$order->save();
+	}
+
+	private function mark_order_for_tracking_update( $order_id ) {
+		$encoded_order_ids = get_option( chronopost_order::ORDER_IDS_TO_UPDATE_NAME_OPTION_NAME );
+		$order_ids         = [];
+
+		if ( ! empty( $encoded_order_ids ) ) {
+			$decoded = json_decode( $encoded_order_ids, true );
+			if ( is_array( $decoded ) ) {
+				$order_ids = $decoded;
+			}
+		}
+
+		$order_ids[] = (int) $order_id;
+		$order_ids   = array_values( array_unique( array_filter( $order_ids ) ) );
+
+		update_option( chronopost_order::ORDER_IDS_TO_UPDATE_NAME_OPTION_NAME, wp_json_encode( $order_ids ) );
+	}
 
 	private function build_order_query_args( $date_from, $date_to, $status ) {
 		$args = [

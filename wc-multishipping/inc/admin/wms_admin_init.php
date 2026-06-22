@@ -10,6 +10,7 @@ use WCMultiShipping\inc\admin\classes\ups\ups_helper;
 use WCMultiShipping\inc\admin\partials\orders\wms_orders_list_table;
 use WCMultiShipping\inc\admin\classes\customer\wms_customer_registration;
 use WCMultiShipping\inc\admin\classes\deactivation\wms_deactivation_feedback;
+use WCMultiShipping\inc\admin\classes\telemetry\wms_telemetry;
 
 use WCMultiShipping\inc\front\pickup\chronopost\chronopost_pickup_widget;
 use WCMultiShipping\inc\front\pickup\mondial_relay\mondial_relay_pickup_widget;
@@ -37,6 +38,8 @@ class wms_admin_init {
 		wms_customer_registration::register_hooks();
 		
 		wms_deactivation_feedback::register_hooks();
+
+		wms_telemetry::register_hooks();
 		
 
 		chronopost_pickup_widget::register_hooks();

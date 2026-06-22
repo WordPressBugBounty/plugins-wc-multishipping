@@ -4,6 +4,7 @@ namespace WCMultiShipping\inc\admin\classes\mondial_relay;
 
 use WCMultiShipping\inc\admin\classes\abstract_classes\abstract_settings;
 use WCMultiShipping\inc\admin\classes\mondial_relay\mondialrelay_api_helper;
+use WCMultiShipping\inc\admin\classes\telemetry\wms_telemetry;
 use WCMultiShipping\inc\admin\partials\settings\wms_partial_settings_button;
 
 class mondial_relay_settings extends abstract_settings {
@@ -415,6 +416,11 @@ class mondial_relay_settings extends abstract_settings {
 				'message' => __( 'Credentials not found', 'wc-multishipping' ),
 				'error' => true,
 			];
+			wms_telemetry::track( 'carrier_credentials_tested', [
+				'carrier' => 'mondial_relay',
+				'result' => 'error',
+				'error_category' => 'missing_credentials',
+			] );
 
 			wp_send_json( $response );
 		}
@@ -456,6 +462,16 @@ class mondial_relay_settings extends abstract_settings {
 			];
 		}
 
+		$telemetry_properties = [
+			'carrier' => 'mondial_relay',
+			'result' => empty( $response['error'] ) ? 'success' : 'error',
+		];
+
+		if ( ! empty( $response['error'] ) ) {
+			$telemetry_properties['error_category'] = 'credentials_error';
+		}
+
+		wms_telemetry::track( 'carrier_credentials_tested', $telemetry_properties );
 		echo wp_send_json( $response );
 	}
 }

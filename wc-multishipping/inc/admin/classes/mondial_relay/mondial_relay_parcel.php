@@ -41,7 +41,7 @@ class mondial_relay_parcel extends abstract_parcel {
 			$orders_to_update = [ $orders_to_update ];
 		}
 
-		$splitted_order_ids = array_splice( $orders_to_update, 0, 10 );
+		$splitted_order_ids = array_splice( $orders_to_update, 0, 100 );
 
 		$mondial_relay_label_class = new mondial_relay_label();
 		$mondial_relay_api_helper = new mondial_relay_api_helper();

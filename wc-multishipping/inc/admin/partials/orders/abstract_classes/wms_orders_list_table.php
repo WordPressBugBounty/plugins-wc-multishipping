@@ -121,11 +121,8 @@ class wms_orders_list_table extends \WP_List_Table {
 		$result->status = false;
 		$result->message = '';
 
-		if ( ! class_exists( $config_class ) || ! method_exists( $config_class, 'is_license_valid' ) ) {
-			return $result;
-		}
 
-		return $config_class::is_license_valid();
+		return $result;
 	}
 
 	protected function display_external_label_management_notice() {

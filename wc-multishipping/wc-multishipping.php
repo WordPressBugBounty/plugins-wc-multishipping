@@ -2,7 +2,7 @@
 /*
 Plugin Name: WCMultiShipping — Mondial Relay, Inpost & Chronopost for WooCommerce
 Description: Create Chronopost & Mondial relay shipping labels and send them easily.
-Version: 3.0.3
+Version: 3.0.5
 Author: Mondial Relay WooCommerce - WCMultiShipping
 Author URI: https://www.wcmultishipping.com/fr/mondial-relay-woocommerce/
 Requires Plugins: woocommerce

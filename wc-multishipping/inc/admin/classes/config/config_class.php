@@ -4,6 +4,7 @@
 namespace WCMultiShipping\inc\admin\classes\config;
 
 use WCMultiShipping\inc\admin\classes\customer\wms_customer_registration;
+use WCMultiShipping\inc\admin\classes\telemetry\wms_telemetry;
 
 class config_class
 {

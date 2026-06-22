@@ -4,6 +4,7 @@ namespace WCMultiShipping\inc\admin\partials\orders\chronopost;
 
 
 use WCMultiShipping\inc\admin\classes\chronopost\chronopost_connection_manager;
+use WCMultiShipping\inc\admin\classes\chronopost\chronopost_parcel;
 use WCMultiShipping\inc\admin\partials\orders\abstract_classes\wms_orders_list_table;
 
 class chronopost_orders_list_table extends wms_orders_list_table
@@ -102,16 +103,25 @@ class chronopost_orders_list_table extends wms_orders_list_table
 	protected function display_external_label_management_notice()
 	{
 		if ($this->should_display_chronopost_pro_upgrade_action()) {
+			$disabled_tooltip = __('WcMultishipping Pro version is needed to handle shipping labels directly from your WordPress website. Click on the button below to get it.', 'wc-multishipping');
+			$disabled_help_id = 'wms-chronopost-label-action-help';
 			?>
 			<div style="display: inline-block;">
 				<span
 					class="button button-primary disabled"
 					aria-disabled="true"
-					style="pointer-events: none; cursor: default; opacity: .55;"
+					aria-describedby="<?php echo esc_attr($disabled_help_id); ?>"
+					aria-label="<?php echo esc_attr($this->get_external_label_management_button_label().' - '.$disabled_tooltip); ?>"
+					tabindex="0"
+					title="<?php echo esc_attr($disabled_tooltip); ?>"
+					style="cursor: help; opacity: .55;"
 				>
 					<?php echo esc_html($this->get_external_label_management_button_label()); ?>
 				</span>
 			</div>
+			<p id="<?php echo esc_attr($disabled_help_id); ?>" style="order: 99; flex: 0 0 100%; margin: -2px 0 0; color: #646970; font-size: 12px; line-height: 1.35;">
+				<?php echo esc_html($disabled_tooltip); ?>
+			</p>
 			<?php
 
 			return;
@@ -140,6 +150,38 @@ class chronopost_orders_list_table extends wms_orders_list_table
         return __('Generate shipping labels', 'wc-multishipping');
     }
 
+    protected function get_chronopost_pro_shipping_status($wc_order, $order_id)
+    {
+        $last_event_label = $wc_order->get_meta(chronopost_parcel::LAST_EVENT_LABEL_META_KEY, true);
+        if (!empty($last_event_label)) {
+            return esc_html($last_event_label);
+        }
+
+        $tracking_numbers = chronopost_parcel::get_tracking_numbers_from_order_ids([$order_id]);
+        if (empty($tracking_numbers) || !is_array($tracking_numbers)) {
+            return '';
+        }
+
+        $tracking_links = [];
+        foreach (array_unique($tracking_numbers) as $tracking_number) {
+            if (empty($tracking_number)) {
+                continue;
+            }
+
+            $tracking_links[] = sprintf(
+                '<a href="%s" target="_blank" rel="noopener noreferrer">%s</a>',
+                esc_url(chronopost_parcel::get_tracking_url($tracking_number)),
+                esc_html($tracking_number)
+            );
+        }
+
+        if (empty($tracking_links)) {
+            return '';
+        }
+
+        return esc_html__('Tracking received:', 'wc-multishipping') . '<br>' . implode('<br>', $tracking_links);
+    }
+
     public function get_columns()
     {
         $columns = [
@@ -150,12 +192,14 @@ class chronopost_orders_list_table extends wms_orders_list_table
             'wms_address'         => __('Address', 'wc-multishipping'),
             'wms_country'         => __('Country', 'wc-multishipping'),
             'wms_shipping_method' => __('Shipping method', 'wc-multishipping'),
+            'wms_shipping_status' => $this->is_chronopost_pro_external_label_mode()
+                ? __('Chronopost Shipping status', 'wc-multishipping')
+                : __('Actions', 'wc-multishipping'),
             'wms_woo_status'      => __('Order status', 'wc-multishipping'),
-            'wms_shipping_status' => __('Actions', 'wc-multishipping'),
         ];
 
         if ($this->is_chronopost_pro_external_label_mode()) {
-            unset($columns['cb'], $columns['wms_shipping_status']);
+            unset($columns['cb']);
         }
 
         return array_map(
@@ -202,6 +246,15 @@ END_HTML;
         if (empty($ids)) return;
 
         if (!wms_table_exists()) {
+            wms_enqueue_message(
+                __('WcMultishipping Pro version is needed to handle shipping labels directly from your WordPress website. Click on the button below to get it.', 'wc-multishipping'),
+                'error'
+            );
+
+            return;
+        }
+
+        if (!$this->has_valid_pro_license()) {
             wms_enqueue_message(
                 __('WcMultishipping Pro version is needed to handle shipping labels directly from your WordPress website. Click on the button below to get it.', 'wc-multishipping'),
                 'error'
@@ -292,6 +345,9 @@ END_HTML;
             $address .= '<br>'.$wc_order->get_shipping_postcode().' '.$wc_order->get_shipping_city();
 
             $labels = !empty($tracking_numbers[$one_order_id]) ? $tracking_numbers[$one_order_id] : '';
+            $shipping_status = $this->is_chronopost_pro_external_label_mode()
+                ? $this->get_chronopost_pro_shipping_status($wc_order, $one_order_id)
+                : $labels;
 
             $data[] = [
                 'wms_data_id'         => $one_order_id,
@@ -303,7 +359,7 @@ END_HTML;
                 'wms_country'         => $wc_order->get_shipping_country(),
                 'wms_shipping_method' => $wc_order->get_shipping_method(),
                 'wms_woo_status'      => wc_get_order_status_name($wc_order->get_status()),
-                'wms_shipping_status' => $labels,
+                'wms_shipping_status' => $shipping_status,
             ];
         }
 

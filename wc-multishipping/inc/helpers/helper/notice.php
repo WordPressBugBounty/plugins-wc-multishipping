@@ -11,7 +11,15 @@ function wms_session()
 function wms_enqueue_message($message, $type = 'success')
 {
     $type = str_replace(['notice', 'message'], ['info', 'success'], $type);
+    $message = is_array($message) ? array_filter($message, function ($one_message) {
+        return '' !== trim((string) $one_message);
+    }) : $message;
     $message = is_array($message) ? implode('<br/>', $message) : $message;
+    $message = is_string($message) ? trim($message) : $message;
+
+    if (empty($message)) {
+        return false;
+    }
 
     $handledTypes = ['info', 'warning', 'error', 'success'];
 
@@ -30,6 +38,14 @@ function wms_display($messages, $type = 'success', $inline = false, $is_dismissi
 {
     if (empty($messages)) return;
     if (!is_array($messages)) $messages = [$messages];
+    $messages = array_filter($messages, function ($message) {
+        if (is_array($message)) {
+            $message = implode('', $message);
+        }
+
+        return '' !== trim((string) $message);
+    });
+    if (empty($messages)) return;
 
     if ('logs' === $display_area) $log_message = '';
 
@@ -38,14 +54,20 @@ function wms_display($messages, $type = 'success', $inline = false, $is_dismissi
 
     foreach ($messages as $one_message) {
 
+        if (is_array($one_message)) {
+            $one_message = array_filter($one_message, function ($message_part) {
+                return '' !== trim((string) $message_part);
+            });
+            $one_message = 'logs' === $display_area ? implode("\r\n", $one_message) : implode('</p><p>', $one_message);
+        }
+        $one_message = trim((string) $one_message);
+        if ('' === $one_message) continue;
+
         if ('logs' === $display_area) {
-            if (is_array($one_message)) $one_message = implode("\r\n", $one_message);
             $log_message .= $one_message;
             continue;
         }
         echo '<div class="notice notice-'.$type.' '.$inline.' '.$is_dismissible.'">';
-
-        if (is_array($one_message)) $one_message = implode('</p><p>', $one_message);
 
         echo '<div><p>'.($one_message).'</p></div>';
 
