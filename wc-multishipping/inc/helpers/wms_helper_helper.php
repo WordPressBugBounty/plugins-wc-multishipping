@@ -4,7 +4,7 @@ if (!defined('DS')) define('DS', DIRECTORY_SEPARATOR);
 
 define('WMS_COMPONENT', 'wc-multishipping');
 define('WMS_FOLDER', WP_PLUGIN_DIR.DS.WMS_COMPONENT.DS);
-define('WMS_VERSION', '3.0.0');
+define('WMS_VERSION', '3.0.6');
 define('WMS_WEBSITE', 'https://www.wcmultishipping.com/');
 
 define('WMS_INCLUDES', WMS_FOLDER.'inc'.DS);
@@ -60,6 +60,4 @@ include WMS_GLOBAL_HELPERS.'helper'.DS.'security.php';
 include WMS_GLOBAL_HELPERS.'helper'.DS.'debug.php';
 include WMS_GLOBAL_HELPERS.'helper'.DS.'database.php';
 include WMS_GLOBAL_HELPERS.'helper'.DS.'notice.php';
-
-
 

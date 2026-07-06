@@ -194,6 +194,7 @@ class chronopost_api_helper {
 			'chronopost_2shop'            => '5X',
 			'chronopost_2shop_europe'     => '6B',
 			'chronopost_ambient_relais_13'=> '5Q',
+			'chronopost_relais_fresh_13'  => '6S',
 		];
 
 		return $fallback_codes[ $shipping_method_id ] ?? '86';

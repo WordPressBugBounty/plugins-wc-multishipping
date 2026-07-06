@@ -55,15 +55,28 @@ class chronopost_pro_order_model {
 		$orders = [];
 		$seen   = [];
 
-		$flagged_orders = $this->fetch_orders_by_meta_query(
-			$args,
-			[
-				[
-					'key'   => chronopost_order::IS_CHRONOPOST_META_KEY,
-					'value' => chronopost_order::IS_CHRONOPOST_META_VALUE_TRUE,
-				],
-			]
-		);
+		$flagged_orders = [];
+
+		if ( OrderUtil::custom_orders_table_usage_is_enabled() ) {
+			try {
+				$flagged_orders = $this->fetch_orders_by_meta_query(
+					$args,
+					[
+						[
+							'key'   => chronopost_order::IS_CHRONOPOST_META_KEY,
+							'value' => chronopost_order::IS_CHRONOPOST_META_VALUE_TRUE,
+						],
+					]
+				);
+			} catch ( \Throwable $exception ) {
+				wms_logger(
+					sprintf(
+						'Chronopost PRO: flagged order lookup failed, falling back to shipping-method lookup. %s',
+						$exception->getMessage()
+					)
+				);
+			}
+		}
 
 		foreach ( $flagged_orders as $order ) {
 			if ( ! chronopost_order::sync_chronopost_order_flag( $order ) ) {

@@ -29,11 +29,13 @@ class mondial_relay_order extends abstract_order
         'mondial_relay_domicile_inf_30' => 'Livraison Domicile <30kg',
         'mondial_relay_point_relais' => 'Livraison Point Relais',
         'mondial_relay_lockers' => 'Livraison Lockers',
+        'mondial_relay_point_relais_lockers' => 'Livraison Point Relais et Lockers',
     ];
 
     const ID_SHIPPING_METHODS_RELAY = [
         'mondial_relay_point_relais',
         'mondial_relay_lockers',
+        'mondial_relay_point_relais_lockers',
     ];
 
     public static function get_integration_helper()
@@ -93,4 +95,3 @@ class mondial_relay_order extends abstract_order
         return new mondial_relay_label();
     }
 }
-

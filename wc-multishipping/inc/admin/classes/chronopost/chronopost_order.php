@@ -38,6 +38,7 @@ class chronopost_order extends abstract_order {
 		'chronopost_18_ambient' => 'Chronopost 18 Ambient',
 		'chronopost_ambient_13' => 'Chronopost 13 Ambient',
 		'chronopost_ambient_relais_13' => 'Chronopost 13 Ambient Relais',
+		'chronopost_relais_fresh_13' => 'Chronopost Relais Fresh 13',
 		'chronopost_classic' => 'Chronopost Classic',
 		'chronopost_express' => 'Chronopost Express',
 		'chronopost_precise' => 'Chronopost Precise',
@@ -54,6 +55,7 @@ class chronopost_order extends abstract_order {
 		'chronopost_relais_europe',
 		'chronopost_relais_dom',
 		'chronopost_ambient_relais_13',
+		'chronopost_relais_fresh_13',
 		'chronopost_2shop',
 		'chronopost_2shop_europe'
 	];

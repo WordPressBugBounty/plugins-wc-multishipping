@@ -153,6 +153,9 @@ function init_mondial_relay_map() {
     const isMondialRelayLockers =
         typeof selectedShippingMethod === "string" &&
         selectedShippingMethod.includes("mondial_relay_lockers");
+    const isMondialRelayPointRelaisAndLockers =
+        typeof selectedShippingMethod === "string" &&
+        selectedShippingMethod.includes("mondial_relay_point_relais_lockers");
     console.log(isMondialRelayLockers);
 
     jQuery(".wms_pickup_modal_map").MR_ParcelShopPicker({
@@ -162,7 +165,11 @@ function init_mondial_relay_map() {
         PostCode: zipcode_to_display,
         Responsive: true,
         NbResults: 19,
-        ColLivMod: isMondialRelayLockers ? "APM" : "MED",
+        ColLivMod: isMondialRelayLockers
+            ? "APM"
+            : isMondialRelayPointRelaisAndLockers
+              ? "24R"
+              : "MED",
         OnParcelShopSelected: function (data) {
             pickup_id = data.ID;
             pickup_name = data.Nom;

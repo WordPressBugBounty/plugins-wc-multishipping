@@ -352,7 +352,7 @@ class chronopost_label extends abstract_label {
 				'width' => $parcels_dimensions[ $i ]['width'],
 			];
 
-			if ( $shipping_method_id == 'chronopost_13_fresh' ) {
+			if ( $shipping_method_id == 'chronopost_13_fresh' || $shipping_method_id == 'chronopost_relais_fresh_13' ) {
 				$skybill[ $i ] = array_merge( $skybill[ $i ], [ 'as' => '' ] );
 			} else if ( $shipping_method_id == 'chronopost_ambient_relais_13' ) {
 				$skybill[ $i ] = array_merge( $skybill[ $i ], [ 'as' => 'A02' ] );
@@ -376,7 +376,7 @@ class chronopost_label extends abstract_label {
 		$shipping_method = reset( $order_shipping_method );
 		$shipping_method_id = $shipping_method->get_method_id();
 
-		if ( $shipping_method_id !== 'chronopost_13_fresh' && $shipping_method_id !== 'chronopost_18_fresh') {
+		if ( $shipping_method_id !== 'chronopost_13_fresh' && $shipping_method_id !== 'chronopost_18_fresh' && $shipping_method_id !== 'chronopost_relais_fresh_13' ) {
 			return $this;
 		}
 
@@ -390,7 +390,7 @@ class chronopost_label extends abstract_label {
 
 		$scheduled_value = [ 
 			'expirationDate' => $expiration_date,
-			
+			'sellByDate' => $expiration_date,
 		];
 
 		$this->payload['scheduledValue'] = $scheduled_value;

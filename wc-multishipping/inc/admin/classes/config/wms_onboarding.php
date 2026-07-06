@@ -351,6 +351,7 @@ class wms_onboarding {
 		return [
 			'installation_registered' => (bool) get_option( 'wms_customer_installation_registered', false ),
 			'email_required' => isset( $_GET['email_required'] ) && '1' === wp_unslash( $_GET['email_required'] ),
+			'license_error' => isset( $_GET['license_error'] ) && '1' === wp_unslash( $_GET['license_error'] ),
 			'mode' => method_exists( config_class::class, 'check_wms_api_key' ) ? 'license' : 'email',
 			'wms_api_key' => get_option( 'wms_api_key', '' ),
 			'wms_license_expiration_date' => (int) get_option( 'wms_license_expiration_date', 0 ),
@@ -361,7 +362,13 @@ class wms_onboarding {
 	}
 
 	public static function is_registration_required() {
-		return self::is_email_registration_mode() && ! (bool) get_option( 'wms_customer_installation_registered', false );
+		if ( self::is_email_registration_mode() ) {
+			return ! (bool) get_option( 'wms_customer_installation_registered', false );
+		}
+
+		$license_expiration = (int) get_option( 'wms_license_expiration_date', 0 );
+
+		return '' === trim( (string) get_option( 'wms_api_key', '' ) ) || empty( $license_expiration ) || $license_expiration < time();
 	}
 
 	public static function get_state() {
@@ -439,20 +446,24 @@ class wms_onboarding {
 				'description' => __( 'Locker delivery when you want to offer parcel lockers in checkout.', 'wc-multishipping' ),
 				'default_title' => __( 'Mondial Relay Lockers', 'wc-multishipping' ),
 			],
+			'mondial_relay_point_relais_lockers' => [
+				'carrier' => 'mondial_relay',
+				'title' => __( 'Mondial Relay Point Relais and Lockers', 'wc-multishipping' ),
+				'description' => __( 'Combined relay-point and locker delivery in one checkout method.', 'wc-multishipping' ),
+				'default_title' => __( 'Mondial Relay Point Relais and Lockers', 'wc-multishipping' ),
+			],
 		];
 	}
 
 	public static function get_steps() {
 		$steps = [];
 
-		if ( self::is_email_registration_mode() ) {
-			$steps[ self::STEP_ACTIVATION ] = [
-				'label' => __( 'Activation', 'wc-multishipping' ),
-				'kicker' => __( 'Step 1', 'wc-multishipping' ),
-				'title' => __( 'Confirm your installation', 'wc-multishipping' ),
-				'description' => __( 'Add the support email used for this shop before configuring your carriers.', 'wc-multishipping' ),
-			];
-		}
+		$steps[ self::STEP_ACTIVATION ] = [
+			'label' => __( 'Activation', 'wc-multishipping' ),
+			'kicker' => __( 'Step 1', 'wc-multishipping' ),
+			'title' => self::is_email_registration_mode() ? __( 'Confirm your installation', 'wc-multishipping' ) : __( 'Activate your license', 'wc-multishipping' ),
+			'description' => self::is_email_registration_mode() ? __( 'Add the support email used for this shop before configuring your carriers.', 'wc-multishipping' ) : __( 'Add your license key before configuring your carriers.', 'wc-multishipping' ),
+		];
 
 		$step_offset = count( $steps );
 
@@ -951,7 +962,7 @@ class wms_onboarding {
 	private static function get_step_statuses( $draft, $zone_id, $selected_ids ) {
 		$selected_carriers = self::get_selected_carriers( $draft );
 		$has_preview_product = ! empty( self::get_preview_product_choices() );
-		$activation_complete = ! self::is_email_registration_mode() || (bool) get_option( 'wms_customer_installation_registered', false );
+		$activation_complete = ! self::is_registration_required();
 		$carriers_complete = ! empty( $selected_ids );
 		$connection_complete = self::is_connection_step_complete( $selected_carriers );
 		$addresses_complete = empty( self::validate_address_completion( $selected_carriers ) );
@@ -1689,6 +1700,7 @@ class wms_onboarding {
 					'chronopost_relais',
 					'mondial_relay_point_relais',
 					'mondial_relay_lockers',
+					'mondial_relay_point_relais_lockers',
 				]
 			)
 		);

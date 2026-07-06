@@ -9,12 +9,15 @@ class wms_telemetry {
 	const OPTION_INSTALL_ID = 'wms_telemetry_install_id';
 	const OPTION_QUEUE = 'wms_telemetry_queue';
 	const OPTION_SEEN_EVENTS = 'wms_telemetry_seen_events';
-	const CRON_HOOK = 'wms_flush_telemetry_queue';
 	const ENDPOINT = 'https://www.wcmultishipping.com/api/webhook/plugin-telemetry';
 	const SECURITY_TOKEN = 'GmYCImJAK61qWO8WVDa64AK7IaXghfAorZtS-RpW8';
 	const SCHEMA_VERSION = 1;
 	const MAX_QUEUE_SIZE = 30;
 	const MAX_ATTEMPTS = 2;
+	const MAX_RETRY_PER_REQUEST = 1;
+	const HTTP_TIMEOUT = 1.5;
+
+	private static $is_flushing = false;
 
 	private static $allowed_events = [
 		'plugin_onboarding_started',
@@ -41,11 +44,15 @@ class wms_telemetry {
 
 	public static function register_hooks() {
 		add_action( 'admin_post_wms_save_telemetry_settings', [ __CLASS__, 'handle_save_settings' ] );
-		add_action( self::CRON_HOOK, [ __CLASS__, 'flush_queue' ] );
+		self::register_retry_hooks();
+	}
+
+	public static function register_retry_hooks() {
+		add_action( 'admin_init', [ __CLASS__, 'flush_queue' ] );
 	}
 
 	public static function is_enabled() {
-		return 'yes' === get_option( self::OPTION_ENABLED, 'no' );
+		return true;
 	}
 
 	public static function has_saved_preference() {
@@ -53,7 +60,7 @@ class wms_telemetry {
 	}
 
 	public static function set_enabled( $enabled ) {
-		update_option( self::OPTION_ENABLED, $enabled ? 'yes' : 'no', false );
+		update_option( self::OPTION_ENABLED, 'yes', false );
 	}
 
 	public static function handle_save_settings() {
@@ -63,12 +70,8 @@ class wms_telemetry {
 
 		check_admin_referer( 'wms_telemetry_settings', 'wms_telemetry_nonce' );
 
-		$enabled = isset( $_POST['wms_telemetry_enabled'] );
-		self::set_enabled( $enabled );
-
-		if ( $enabled ) {
-			self::track( 'plugin_settings_saved', [ 'result' => 'telemetry_enabled' ] );
-		}
+		self::set_enabled( true );
+		self::track( 'plugin_settings_saved', [ 'result' => 'telemetry_enabled' ] );
 
 		wms_enqueue_message( __( 'Telemetry preference saved.', 'wc-multishipping' ), 'success' );
 		wp_safe_redirect( admin_url( 'admin.php?page=wc-multishipping&view=dashboard' ) );
@@ -120,35 +123,41 @@ class wms_telemetry {
 			'properties' => self::sanitize_properties( $properties ),
 		];
 
-		self::enqueue( $payload );
+		self::flush_queue( self::MAX_RETRY_PER_REQUEST );
+
+		if ( ! self::send_payload( $payload ) ) {
+			self::enqueue( $payload, 1 );
+		}
 	}
 
-	public static function flush_queue() {
+	public static function flush_queue( $limit = self::MAX_RETRY_PER_REQUEST ) {
+		if ( self::$is_flushing ) {
+			return;
+		}
+
 		$queue = self::get_queue();
 		if ( empty( $queue ) ) {
 			return;
 		}
 
 		$remaining = [];
+		$sent_count = 0;
+		self::$is_flushing = true;
 
 		foreach ( $queue as $entry ) {
 			$payload = self::sanitize_payload( $entry['payload'] ?? [] );
 			$attempts = (int) ( $entry['attempts'] ?? 0 );
 
-			$response = wp_remote_post(
-				self::ENDPOINT,
-				[
-					'body' => wp_json_encode( $payload ),
-					'headers' => [
-						'Content-Type' => 'application/json',
-						'X-WMS-Security-Token' => self::SECURITY_TOKEN,
-					],
-					'timeout' => 3,
-					'sslverify' => true,
-				]
-			);
+			if ( null !== $limit && $sent_count >= $limit ) {
+				$remaining[] = [
+					'payload' => $payload,
+					'attempts' => $attempts,
+				];
+				continue;
+			}
 
-			if ( ! is_wp_error( $response ) && (int) wp_remote_retrieve_response_code( $response ) >= 200 && (int) wp_remote_retrieve_response_code( $response ) < 300 ) {
+			$sent_count++;
+			if ( self::send_payload( $payload ) ) {
 				continue;
 			}
 
@@ -162,6 +171,29 @@ class wms_telemetry {
 		}
 
 		update_option( self::OPTION_QUEUE, array_slice( $remaining, -self::MAX_QUEUE_SIZE ), false );
+		self::$is_flushing = false;
+	}
+
+	private static function send_payload( $payload ) {
+		$response = wp_remote_post(
+			self::ENDPOINT,
+			[
+				'body' => wp_json_encode( self::sanitize_payload( $payload ) ),
+				'headers' => [
+					'Content-Type' => 'application/json',
+					'X-WMS-Security-Token' => self::SECURITY_TOKEN,
+				],
+				'timeout' => self::HTTP_TIMEOUT,
+				'sslverify' => true,
+			]
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return false;
+		}
+
+		$response_code = (int) wp_remote_retrieve_response_code( $response );
+		return $response_code >= 200 && $response_code < 300;
 	}
 
 	private static function sanitize_payload( $payload ) {
@@ -217,15 +249,14 @@ class wms_telemetry {
 		return $sanitized;
 	}
 
-	private static function enqueue( $payload ) {
+	private static function enqueue( $payload, $attempts = 0 ) {
 		$queue = self::get_queue();
 		$queue[] = [
 			'payload' => $payload,
-			'attempts' => 0,
+			'attempts' => max( 0, (int) $attempts ),
 		];
 
 		update_option( self::OPTION_QUEUE, array_slice( $queue, -self::MAX_QUEUE_SIZE ), false );
-		self::schedule_flush();
 	}
 
 	private static function get_queue() {
@@ -233,9 +264,4 @@ class wms_telemetry {
 		return is_array( $queue ) ? $queue : [];
 	}
 
-	private static function schedule_flush() {
-		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
-			wp_schedule_single_event( time() + 60, self::CRON_HOOK );
-		}
-	}
 }

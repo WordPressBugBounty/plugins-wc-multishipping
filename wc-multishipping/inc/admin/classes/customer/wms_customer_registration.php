@@ -63,12 +63,13 @@ class wms_customer_registration {
 
 		$email = isset( $_POST['wms_email'] ) ? sanitize_email( $_POST['wms_email'] ) : '';
 		if ( empty( $email ) || ! is_email( $email ) ) {
+			wms_enqueue_message( __( 'Enter a valid email address before continuing the onboarding.', 'wc-multishipping' ), 'error' );
 			wp_safe_redirect( admin_url( 'admin.php?page=wc-multishipping&view=wizard&step=activation&email_required=1' ) );
 			exit;
 		}
 
 		update_option( self::OPTION_CUSTOMER_EMAIL, $email );
-		wms_telemetry::set_enabled( isset( $_POST['wms_telemetry_enabled'] ) );
+		wms_telemetry::set_enabled( true );
 
 		self::send_registration_to_api( $email );
 

@@ -4,7 +4,7 @@ Donate link:
 Tags: WooCommerce, Mondial Relay, Chronopost
 Requires at least: 4.7
 Tested up to: 6.9
-Stable tag: 3.0.5
+Stable tag: 3.0.6
 Requires PHP: 5.7
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -33,6 +33,8 @@ WcMultiShipping is a plugin that integrates Mondial Relay and Chronopost shippin
 ### Available Mondial Relay Shipping Methods:
 
 - **Mondial Relay - Point Relais**: Customers can choose to have their orders delivered to a nearby pickup point.
+- **Mondial Relay - Lockers**: Customers can choose a Mondial Relay locker.
+- **Mondial Relay - Point Relais + Lockers**: Customers can choose either a pickup point or a locker from one shipping method.
 - **Mondial Relay - Colis Drive**: Perfect for customers who prefer to pick up their orders from a drive-through location.
 - **Mondial Relay - Home Delivery (1 or 2 Deliverers)**: Offers the convenience of home delivery with the option for one or two deliverers, ideal for heavier packages.
 - **Mondial Relay - Home Delivery < 30kg**: Specialized for packages weighing under 30kg, ensuring fast and efficient delivery.
@@ -130,7 +132,7 @@ We provide a detailed setup guide on our website. You can follow the steps here:
 
 == Changelog ==
 
-= 3.0.5 - June 2026 =
+= 3.0.6 - July 2026 =
 Mondial Relay phone normalization fix for label generation
 Mondial Relay status synchronization batch increased
 Chronopost PRO tracking status handling improvements

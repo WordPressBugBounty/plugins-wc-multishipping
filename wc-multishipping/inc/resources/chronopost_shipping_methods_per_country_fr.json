@@ -13,6 +13,7 @@
         "chronopost_18_ambient": true,
         "chronopost_ambient_13": true,
         "chronopost_ambient_relais_13": true,
+        "chronopost_relais_fresh_13": true,
         "chronopost_classic": false,
         "chronopost_express": false,
         "chronopost_relais": true,
